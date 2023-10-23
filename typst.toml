@@ -6,5 +6,6 @@ authors = ["Sabrina Jewson"]
 license = "MIT"
 description = "Transpile CommonMark Markdown to Typst, from within Typst!"
 repository = "https://github.com/SabrinaJewson/cmarker.typ"
+keywords = ["Markdown", "CommonMark"]
 compiler = "0.8.0"
-exclude = ["examples", "src", "Cargo.toml", "README.pdf", "build.sh", "target"]
+exclude = ["examples", "README.pdf"]
