@@ -1,9 +1,8 @@
 #import "../lib.typ" as embed-markdown
 
 #embed-markdown.render(
-  read("simple.md"),
-  smart-punctuation: true,
-  blockquote: c => box(stroke: (left: 1pt + black), inset: (left: 5pt, y: 6pt), c),
-  show-source: false,
+  read("tests.md"),
+  blockquote: box.with(stroke: (left: 1pt + black), inset: (left: 5pt, y: 6pt)),
   raw-typst: true,
+  show-source: false,
 )

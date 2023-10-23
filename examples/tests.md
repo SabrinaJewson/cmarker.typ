@@ -1,87 +1,82 @@
-hello  
-world!
+Tests
+=====
 
-this is *very* cool,
-and I _really_ like **Typst**
+This document contains a bunch of tests that should be manually checked.
 
+(This should be on the same line) (as this)
 
-# Some code
+(This should be above)  
+(this)
 
-    let x = 2 + 2;
-    println!("2 + 2 = {x}");
+Basic styling: *italics*, _italics_, **bold**, __bold__, ~strikethrough~
+
+Unlike Typst, bare links are not clickable: https://example.org.  
+Angle-bracket links are clickable: <https://example.org>.  
+We can also use links with text: [example.org](https://example.org).  
+Unlike Typst, we cannot do references with an at sign: @reference.
+
+## Heading 2
+### Heading 3
+#### Heading 4
+##### Heading 5
+###### Heading 6
+
+    code block defined through indentation (no syntax highlighting)
+	We can put triple-backticks in indented code blocks:
 	```rust
-	Hello world
+	let x = 5;
 	```
 
 ```rust
-let x = 2 + 2;
-println!("2 + 2 = {x}");
+// Code block defined through backticks, with syntax highlighting
 ```
 
 Some `inline code`.
 
+A horizontal rule:
+
 ---
 
-- a
+- an
+- unordered
 - list
-- of
-- stuff
-asdf
-lol
-`asdf`
 
-## A sub-heading
+	with this paragraph nested in the last list element
 
-You should go to https://example.com, or <https://example.org>.
-You can read more [on the Typst website](https://typst.app/).
+We can escape things with backslashes:
+\*asterisks\*,
+\`backticks\`,
+\_underscores\_,
+\# hashes,
+\~tildes\~,
+\- minus signs,
+\+ plus signs,
+\<angle brackets\>.
 
-\*asterisks\*
-\`backticks\`
-\_underscores\_
-\<not a reference\>
-@it
-lol
+== Putting equals signs at the start of the line does not make this line into a heading.  
 
-== Not a heading
+/ Unlike Typst, this line is plain text: and not a term and definition  
+Similarly, math mode does not work: $ x = 5 $  
+A backslash on its own does not produce a line break: a\b.  
+Typst commands do not work: #rect(width: 1cm)  
+Neither do Typst comments: /* A comment */ // Line comment  
+Neither does tildes: foo~bar  
+Neither do Unicode escapes: \u{1f600}
 
-\- not  
-\- a  
-\+ list
+Smart quotes: 'smart quote' "smart quote"  
+We can escape them to make not-smart quotes: \'not smart quote\' \"not smart quote\"  
+We have Markdown smart punctuation, such as en dashes (-- and –) and em dashes (--- and —).
 
-/ Not term: and definition
-
-$ x = 5 $
-
-Line\break
-
-'smart quote'
-"smart quote"
-\'not smart quote\'
-\"not smart quote\"
-
-#rect(width: 1cm)
-
-\#ad
-
-/* A comment */ // Line comment
-
-Foo--bar
-
-Foo~bar
-
-\u{1f600}
 
 > Quoted text
 >
 > > Nested
 >
-> goes here
-
-- hello
+> Unnnested
 
 <!--typst-begin-exclude-->
-Hello from *not* Typst!<!--typst-end-exclude-->
+This should not appear.<!--typst-end-exclude-->
 
-owo
+Raw Typst code:
 
 <!--raw-typst $ 2 + 2 = #(2 + 2) $-->
