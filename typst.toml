@@ -1,0 +1,10 @@
+[package]
+name = "embed-markdown"
+version = "0.1.0"
+entrypoint = "lib.typ"
+authors = ["Sabrina Jewson"]
+license = "MIT"
+description = "Transpile CommonMark Markdown to Typst, from within Typst!"
+repository = "https://github.com/SabrinaJewson/markdown.typ"
+compiler = "0.8.0"
+exclude = ["src", "target", "examples"]
