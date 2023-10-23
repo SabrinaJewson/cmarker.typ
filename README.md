@@ -74,7 +74,7 @@ and import it directly into Typst.
 *Using* __lots__ ~of~ `fancy` [features](https://example.org/).
 	```],
 )
-#table(columns: (100%), [`simple.pdf`], image("./examples/simple.png"))
+#table(columns: (100%), [`simple.pdf`], image("./examples/simple.png", height: auto))
 -->
 
 This document is available
