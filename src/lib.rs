@@ -1,3 +1,5 @@
+#![allow(clippy::items_after_test_module)]
+
 wasm_minimal_protocol::initiate_protocol!();
 
 bitflags! {
@@ -14,8 +16,11 @@ fn render(markdown: &[u8], options: &[u8]) -> Result<Vec<u8>, String> {
     let &[options, h1_level] = options else { panic!() };
     let options = Options::from_bits(options).unwrap();
     let markdown = str::from_utf8(markdown).unwrap();
+    inner(markdown, options, h1_level)
+}
 
-    // TODO: Enable tables
+fn inner(markdown: &str, options: Options, h1_level: u8) -> Result<Vec<u8>, String> {
+    // TODO: Enable tables and footnotes
     let mut markdown_options = pulldown_cmark::Options::ENABLE_STRIKETHROUGH;
     if options.contains(Options::SMART_PUNCTUATION) {
         markdown_options |= pulldown_cmark::Options::ENABLE_SMART_PUNCTUATION;
@@ -219,6 +224,202 @@ fn escape_text(text: &[u8], result: &mut Vec<u8>) {
         }
         result.push(byte);
     }
+}
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn heading() {
+        assert_eq!(with_h1_level("# H", 0), "\n H\n");
+        assert_eq!(with_h1_level("## H", 0), "\n= H\n");
+        assert_eq!(with_h1_level("### H", 0), "\n== H\n");
+        assert_eq!(with_h1_level("# H", 1), "\n= H\n");
+        assert_eq!(with_h1_level("## H", 1), "\n== H\n");
+        assert_eq!(with_h1_level("### H", 1), "\n=== H\n");
+        assert_eq!(with_h1_level("###### H", 1), "\n====== H\n");
+        assert_eq!(with_h1_level("# H", 3), "\n=== H\n");
+        assert_eq!(with_h1_level("###### H", 4), "\n========= H\n");
+        assert_eq!(with_h1_level("H\n=", 1), "\n= H\n");
+        assert_eq!(with_h1_level("H\n-", 1), "\n== H\n");
+    }
+
+    #[test]
+    fn lines() {
+        assert_eq!(render_("a\nb"), "a b\n\n");
+        assert_eq!(render_("a \nb"), "a  b\n\n");
+        assert_eq!(render_("a  \nb"), "a\\ b\n\n");
+        assert_eq!(render_("a\n\nb"), "a\n\nb\n\n");
+    }
+
+    #[test]
+    fn styling() {
+        assert_eq!(render_("*i* _i_"), "_i_ _i_\n\n");
+        assert_eq!(render_("**b** __b__"), "*b* *b*\n\n");
+        assert_eq!(render_("~s~"), "#strike[s]\n\n");
+    }
+
+    #[test]
+    fn links_images() {
+        assert_eq!(
+            render_("<https://example.org/\">"),
+            "#link(\"https://example.org/\\\"\")[#(\"https://\")example.org\\/\\\"]\n\n"
+        );
+        assert_eq!(
+            render_("[a](https://example.org)"),
+            "#link(\"https://example.org\")[a]\n\n"
+        );
+        assert_eq!(
+            render_("[a][a]\n\n[a]: https://example.org"),
+            "#link(\"https://example.org\")[a]\n\n"
+        );
+        assert_eq!(
+            render_("![alt text](https://example.org/)"),
+            "#image(\"https://example.org/\",alt:\"alt text\")\n\n",
+        );
+    }
+
+    #[test]
+    fn code() {
+        assert_eq!(render_("\tlet x = 5;"), "#raw(block:true,\"let x = 5;\")\n");
+        assert_eq!(
+            render_("```\nlet x = 5;\n```"),
+            "#raw(block:true,\"let x = 5;\n\")\n"
+        );
+        assert_eq!(
+            render_("```rust\nlet x = 5;\n```"),
+            "#raw(block:true,lang:\"rust\",\"let x = 5;\n\")\n"
+        );
+        assert_eq!(
+            render_("some`inline code`…"),
+            "some#raw(block:false,\"inline code\")…\n\n"
+        );
+    }
+
+    #[test]
+    fn horiz() {
+        assert_eq!(render_("---\n"), "#line(length:100%)\n",);
+    }
+
+    #[test]
+    fn lists() {
+        assert_eq!(render_("- a\n- b\n- c"), "#list([a],[b],[c],)\n");
+        assert_eq!(render_("+ a\n+ b\n+ c"), "#list([a],[b],[c],)\n");
+        assert_eq!(render_("1. a\n1. b\n1. c"), "#enum(start:1,[a],[b],[c],)\n");
+        assert_eq!(render_("5. a\n1. b\n1. c"), "#enum(start:5,[a],[b],[c],)\n");
+        assert_eq!(render_("- a\n\n\tb\n\nc"), "#list([a\n\nb\n\n],)\nc\n\n");
+    }
+
+    #[test]
+    fn escaping() {
+        assert_eq!(render_("\\*a\\*"), "\\*a\\*\n\n");
+        assert_eq!(render_("\\_a\\_"), "\\_a\\_\n\n");
+        assert_eq!(render_("\\`a\\`"), "\\`a\\`\n\n");
+    }
+
+    #[test]
+    fn smart_punct() {
+        assert_eq!(with_smart_punct("\"x\""), "“x”\n\n");
+        assert_eq!(with_smart_punct("\\\"x\\\""), "\\\"x\\\"\n\n");
+        assert_eq!(render_("\"x\""), "\\\"x\\\"\n\n");
+        assert_eq!(render_("--;---"), "\\-\\-;\\-\\-\\-\n\n");
+        assert_eq!(with_smart_punct("--;---"), "–;—\n\n");
+        assert_eq!(with_smart_punct("\\--;\\-\\--"), "\\-\\-;\\-\\-\\-\n\n");
+    }
+
+    #[test]
+    fn blockquote() {
+        assert_eq!(with_blockquote("> *q*"), "#blockquote[_q_\n\n]\n\n");
+        assert_eq!(render_("> *Quoted*"), "_Quoted_\n\n");
+        assert_eq!(
+            with_blockquote("> Quoted\n> > Nested"),
+            "#blockquote[Quoted\n\n#blockquote[Nested\n\n]\n\n]\n\n"
+        );
+    }
+
+    #[test]
+    fn exclude() {
+        assert_eq!(
+            render_("<!--typst-begin-exclude-->\na\n<!--typst-end-exclude-->"),
+            "",
+        );
+        assert_eq!(
+            render_("a<!--typst-begin-exclude-->b\nc\nd<!--typst-end-exclude-->e"),
+            "ae\n\n",
+        );
+        assert_eq!(render_("<!--typst-begin-exclude-->b\n\nc"), "",);
+        assert_eq!(render_("a<!--typst-begin-exclude-->b\n\nc"), "a\n\nc\n\n",);
+    }
+
+    #[test]
+    fn html() {
+        assert_eq!(render_("a<!-- … -->b"), "ab\n\n");
+        assert_eq!(render_("<p>a</p>"), "");
+        assert_eq!(render_("<p>\na</p>"), "");
+        assert_eq!(render_("<p>\n\na</p>"), "a\n\n");
+    }
+
+    #[test]
+    fn raw_typst() {
+        assert_eq!(render_("a<!--raw-typst #(1+1)-->b"), "ab\n\n");
+        assert_eq!(with_raw_typst("a<!--raw-typst#(1+1)-->b"), "a#(1+1)b\n\n");
+        assert_eq!(
+            with_raw_typst("<!--raw-typst\n\n#(1+1)\n\n-->\nb"),
+            "\n\n#(1+1)\n\nb\n\n"
+        );
+        assert_eq!(render_("<!--raw-typst\n\n#(1+1)\n\n-->\nb"), "b\n\n");
+    }
+
+    fn with_h1_level(s: &str, h1_level: u8) -> String {
+        render(s, Options::empty(), h1_level)
+    }
+    fn with_smart_punct(s: &str) -> String {
+        render(s, Options::SMART_PUNCTUATION, 1)
+    }
+    fn with_blockquote(s: &str) -> String {
+        render(s, Options::BLOCKQUOTE, 1)
+    }
+    fn with_raw_typst(s: &str) -> String {
+        render(s, Options::RAW_TYPST, 1)
+    }
+    fn render_(s: &str) -> String {
+        render(s, Options::empty(), 1)
+    }
+    fn render(s: &str, options: Options, h1_level: u8) -> String {
+        String::from_utf8(super::inner(s, options, h1_level).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn string_escaping() {
+        assert_eq!(escape_string(""), "");
+        assert_eq!(escape_string("abc#@"), "abc#@");
+        assert_eq!(escape_string("\""), "\\\"");
+        assert_eq!(escape_string("a\\b\"c\""), "a\\\\b\\\"c\\\"");
+    }
+
+    #[test]
+    fn text_escaping() {
+        assert_eq!(escape_text("http://"), "#(\"http://\")");
+        assert_eq!(escape_text("foohttps://bar"), "foo#(\"https://\")bar");
+        assert_eq!(escape_text("*"), "\\*");
+        assert_eq!(escape_text("`"), "\\`");
+        assert_eq!(escape_text("⟪<>⟫"), "⟪\\<\\>⟫");
+        assert_eq!(escape_text("\"\'--"), "\\\"\\\'\\-\\-");
+    }
+
+    fn escape_string(s: &str) -> String {
+        let mut result = Vec::new();
+        super::escape_string(s.as_bytes(), &mut result);
+        String::from_utf8(result).unwrap()
+    }
+
+    fn escape_text(s: &str) -> String {
+        let mut result = Vec::new();
+        super::escape_text(s.as_bytes(), &mut result);
+        String::from_utf8(result).unwrap()
+    }
+
+    use crate::Options;
 }
 
 use bitflags::bitflags;
