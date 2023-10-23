@@ -1,18 +1,18 @@
 <picture>
-#set document(title: "embed-markdown.typ")
+#set document(title: "cmarker.typ")
 #set page(numbering: "1", number-align: center)
 #set text(lang: "en")
-#align(center, text(weight: 700, 1.75em)[embed-markdown.typ])
+#align(center, text(weight: 700, 1.75em)[cmarker.typ])
 #set heading(numbering: "1.")
 #show link: c => text(underline(c), fill: blue)
 #set image(height: 2em)
 #show par: set block(above: 1.2em, below: 1.2em)
-#align(center)[https://github.com/SabrinaJewson/embed-markdown.typ]
+#align(center)[https://github.com/SabrinaJewson/cmarker.typ]
 #"</picture>
 <!--".slice(0,0)
-#import "lib.typ" as embed-markdown
+#import "lib.typ" as cmarker
 #let markdown = read("README.md")
-#embed-markdown.render(
+#cmarker.render(
 	markdown.slice(markdown.position("</picture>") + "</picture>".len()),
 	h1-level: 0,
 	smart-punctuation: false,
@@ -21,7 +21,7 @@
 
 <!--typst-begin-exclude-->
 
-# embed-markdown
+# cmarker
 <!--typst-end-exclude-->
 
 This package enables you to write CommonMark Markdown,
@@ -37,9 +37,9 @@ and import it directly into Typst.
 <td>
 
 ```typst
-#import "@preview/embed-markdown:0.1.0"
+#import "@preview/cmarker:0.1.0"
 
-#embed-markdown.render(read("simple.md"))
+#cmarker.render(read("simple.md"))
 ```
 </td>
 <td>
@@ -64,9 +64,9 @@ and import it directly into Typst.
 	[`simple.typ`],
 	[`simple.md`],
 	[```typst
-#import "@preview/embed-markdown:0.1.0"
+#import "@preview/cmarker:0.1.0"
 
-#embed-markdown.render(read("simple.md"))
+#cmarker.render(read("simple.md"))
 	```],
 	[```markdown
 # We can write Markdown!
@@ -78,8 +78,8 @@ and import it directly into Typst.
 -->
 
 This document is available
-in [Markdown](https://github.com/SabrinaJewson/embed-markdown.typ/tree/main#embed-markdown)
-and [rendered PDF](https://github.com/SabrinaJewson/embed-markdown.typ/blob/main/README.pdf)
+in [Markdown](https://github.com/SabrinaJewson/cmarker.typ/tree/main#cmarker)
+and [rendered PDF](https://github.com/SabrinaJewson/cmarker.typ/blob/main/README.pdf)
 formats.
 
 ## API
@@ -250,11 +250,11 @@ Hello from not Typst!
 Most Markdown parsers support HTML comments,
 so from their perspective this is no different
 to just writing out the Markdown directly;
-but `embed-markdown.typ` knows to search for those comments
+but `cmarker.typ` knows to search for those comments
 and avoid rendering the content in between.
 
 Note that when the opening comment is followed by the end of an element,
-`embed-markdown.typ` will close the block for you.
+`cmarker.typ` will close the block for you.
 For example:
 
 ```md
@@ -294,10 +294,10 @@ We just have to be clever about how we write the README:
 (Typst preamble content)
 #"</picture>
 <!--".slice(0,0)
-#import "@preview/embed-markdown:0.1.0"
+#import "@preview/cmarker:0.1.0"
 #let markdown = read("README.md")
 #markdown = markdown.slice(markdown.position("</picture>") + "</picture>".len())
-#embed-markdown.render(markdown, h1-level: 0)
+#cmarker.render(markdown, h1-level: 0)
 /*-->
 
 Regular Markdown goes here…
@@ -312,10 +312,10 @@ The same code but syntax-highlighted as Typst code helps to illuminate it:
 (Typst preamble content)
 #"</picture>
 <!--".slice(0,0)
-#import "@preview/embed-markdown:0.1.0"
+#import "@preview/cmarker:0.1.0"
 #let markdown = read("README.md")
 #markdown = markdown.slice(markdown.position("</picture>") + "</picture>".len())
-#embed-markdown.render(markdown, h1-level: 0)
+#cmarker.render(markdown, h1-level: 0)
 /*-->
 
 Regular Markdown goes here…

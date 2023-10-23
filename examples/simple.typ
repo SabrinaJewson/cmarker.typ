@@ -1,3 +1,3 @@
-#import "../lib.typ" as embed-markdown
+#import "../lib.typ" as cmarker
 
-#embed-markdown.render(read("simple.md"))
+#cmarker.render(read("simple.md"))

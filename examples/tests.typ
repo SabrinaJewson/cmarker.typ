@@ -1,6 +1,6 @@
-#import "../lib.typ" as embed-markdown
+#import "../lib.typ" as cmarker
 
-#embed-markdown.render(
+#cmarker.render(
   read("tests.md"),
   blockquote: box.with(stroke: (left: 1pt + black), inset: (left: 5pt, y: 6pt)),
   raw-typst: true,
