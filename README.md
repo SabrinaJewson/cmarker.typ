@@ -77,6 +77,11 @@ and import it directly into Typst.
 #table(columns: (100%), [`simple.pdf`], image("./examples/simple.png"))
 -->
 
+This document is available
+in [Markdown](https://github.com/SabrinaJewson/embed-markdown.typ/tree/main#embed-markdown)
+and [rendered PDF](https://github.com/SabrinaJewson/embed-markdown.typ/blob/main/README.pdf)
+formats.
+
 ## API
 
 We offer a single function:
@@ -330,5 +335,12 @@ Regular Markdown goes here…
 	I won’t provide a hard guarantee that everything is fully sandboxed
 	even if you set `raw-typst: false`.
 	That said, Typst itself is well-sandboxed anyway.
+
+## Development
+
+- Build the plugin with `./build.sh`,
+	which produces the `plugin.wasm` necessary to use this.
+- Compile examples with `typst compile examples/{name}.typ --root .`.
+- Compile this README to PDF with `typst compile README.md`.
 
 <!--*///-->
