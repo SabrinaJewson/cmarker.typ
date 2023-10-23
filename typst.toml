@@ -7,4 +7,4 @@ license = "MIT"
 description = "Transpile CommonMark Markdown to Typst, from within Typst!"
 repository = "https://github.com/SabrinaJewson/markdown.typ"
 compiler = "0.8.0"
-exclude = ["src", "target", "examples"]
+exclude = ["examples", "src", "Cargo.toml", "README.pdf", "build.sh", "target"]
