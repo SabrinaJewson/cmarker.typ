@@ -8,6 +8,7 @@ bitflags! {
         const SMART_PUNCTUATION = 0b0000_0001;
         const BLOCKQUOTE = 0b0000_0010;
         const RAW_TYPST = 0b0000_0100;
+        const MATH = 0b0000_1000;
     }
 }
 
@@ -26,6 +27,9 @@ fn inner(markdown: &str, options: Options, h1_level: u8) -> Result<Vec<u8>, Stri
     let mut markdown_options = pulldown_cmark::Options::ENABLE_STRIKETHROUGH;
     if options.contains(Options::SMART_PUNCTUATION) {
         markdown_options |= pulldown_cmark::Options::ENABLE_SMART_PUNCTUATION;
+    }
+    if options.contains(Options::MATH) {
+        markdown_options |= pulldown_cmark::Options::ENABLE_MATH;
     }
 
     let mut result = Vec::new();
@@ -219,12 +223,18 @@ fn inner(markdown: &str, options: Options, h1_level: u8) -> Result<Vec<u8>, Stri
                 }
             }
 
-            InlineMath(_) => {
-                // We can’t support math, so just obliterate it
+            InlineMath(s) => {
+                // We use #inlinemath(`…`) for inline math
+                result.extend_from_slice(b"#inlinemath(`");
+                result.extend_from_slice(s.as_bytes());
+                result.extend_from_slice(b"`)");
             }
 
-            DisplayMath(_) => {
-                // We can’t support math, so just obliterate it
+            DisplayMath(s) => {
+                // We use #displaymath(`…`) for display math
+                result.extend_from_slice(b"#displaymath(`");
+                result.extend_from_slice(s.as_bytes());
+                result.extend_from_slice(b"`)");
             }
 
             SoftBreak => result.push(b' '),
@@ -383,6 +393,20 @@ mod tests {
     }
 
     #[test]
+    fn math() {
+        assert_eq!(with_math("$x$"), "#inlinemath(`x`)\n\n");
+        assert_eq!(
+            with_math("$\\alpha + \\beta$"),
+            "#inlinemath(`\\alpha + \\beta`)\n\n"
+        );
+        assert_eq!(with_math("$$x$$"), "#displaymath(`x`)\n\n");
+        assert_eq!(with_math("a$x$b"), "a#inlinemath(`x`)b\n\n");
+        assert_eq!(render_("a$x$b"), "a\\$x\\$b\n\n");
+        assert_eq!(render_("a$$x$$b"), "a\\$\\$x\\$\\$b\n\n");
+        assert_eq!(with_math("$$\nx\n$$"), "#displaymath(`\nx\n`)\n\n");
+    }
+
+    #[test]
     fn exclude() {
         assert_eq!(
             render_("<!--typst-begin-exclude-->\na\n<!--typst-end-exclude-->"),
@@ -423,6 +447,9 @@ mod tests {
     }
     fn with_blockquote(s: &str) -> String {
         render(s, Options::BLOCKQUOTE, 1)
+    }
+    fn with_math(s: &str) -> String {
+        render(s, Options::MATH, 1)
     }
     fn with_raw_typst(s: &str) -> String {
         render(s, Options::RAW_TYPST, 1)

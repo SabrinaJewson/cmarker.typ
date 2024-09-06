@@ -91,6 +91,7 @@ render(
   markdown,
   smart-punctuation: true,
   blockquote: none,
+  mitex: none,
   h1-level: 1,
   raw-typst: true,
   scope: (:),
@@ -105,7 +106,7 @@ The parameters are as follows:
 	You can set this to `read("somefile.md")` to import an external markdown file;
 	see the
 	[documentation for the read function](https://typst.app/docs/reference/data-loading/read/).
-	- Accepted values: All strings.
+	- Accepted values: All strings or raw text.
 	- Required.
 
 - `smart-punctuation`:
@@ -136,6 +137,24 @@ The parameters are as follows:
 	<!--raw-typst
 	#(box.with(stroke: (left: 1pt + black), inset: (left: 5pt, y: 6pt)))[which displays like this.]
 	-->
+
+- `mitex`:
+  A `mitex` callback function to be used when math equation is encountered in the Markdown,
+  or `none` if math equation should be treated as normal text.
+  Because Typst does not support latex math equation natively,
+  the user must configure this.
+  - Accepted values: The `mitex` function imported from [mitex](https://typst.app/universe/package/mitex) package, or `none`.
+  - Default value: `none`.
+
+  For example, to render math equation as a Typst math block,
+  one can use:
+  ```typ
+  #import "@preview/mitex:0.2.4": mitex
+  #cmarker.render(`$\int_1^2 x \mathrm{d} x$`, mitex: mitex)
+  ```
+  <!--raw-typst
+  $integral_1^2 x dd x$
+  -->
 
 - `h1-level`:
 	The level that top-level headings in Markdown should get in Typst.
@@ -190,6 +209,7 @@ We support CommonMark with a couple extensions.
 - `*emphasis*` or `_emphasis_`: *emphasis*
 - `**strong**` or `__strong__`: **strong**
 - `~strikethrough~`: ~strikethrough~
+- `$x + y$` or `$$x + y$$`: math equation with [mitex](https://typst.app/universe/package/mitex) package.
 - `[links](https://example.org)`: [links](https://example.org/)
 - `### Headings`, where `#` is a top-level heading,
 	`##` a subheading, `###` a sub-subheading, etc
@@ -223,10 +243,10 @@ We support CommonMark with a couple extensions.
 -
 	```md
 	1. Ordered
-	1. Lists
+	2. Lists
 	```
-	1. Ordered
-	1. Lists
+	3. Ordered
+	4. Lists
 - `> blockquotes`, if the `blockquote` parameter is set.
 - Images: `![Some tiled hexagons](examples/hexagons.png)`, giving
 	![Some tiled hexagons](examples/hexagons.png)

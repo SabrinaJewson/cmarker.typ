@@ -41,6 +41,14 @@ A horizontal rule:
 - unordered
 - list
 
+Inline math: $\int_1^2 x \mathrm{d} x$
+
+Display math:
+
+$$
+\int_1^2 x \mathrm{d} x
+$$
+
 	with this paragraph nested in the last list element
 
 We can escape things with backslashes:
