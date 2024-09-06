@@ -243,10 +243,10 @@ We support CommonMark with a couple extensions.
 -
 	```md
 	1. Ordered
-	2. Lists
+	1. Lists
 	```
-	3. Ordered
-	4. Lists
+	1. Ordered
+	1. Lists
 - `> blockquotes`, if the `blockquote` parameter is set.
 - Images: `![Some tiled hexagons](examples/hexagons.png)`, giving
 	![Some tiled hexagons](examples/hexagons.png)
