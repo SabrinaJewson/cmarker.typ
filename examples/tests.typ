@@ -5,6 +5,6 @@
   read("tests.md"),
   blockquote: box.with(stroke: (left: 1pt + black), inset: (left: 5pt, y: 6pt)),
   raw-typst: true,
-  mitex: mitex,
+  math: mitex,
   show-source: false,
 )

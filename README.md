@@ -91,7 +91,7 @@ render(
   markdown,
   smart-punctuation: true,
   blockquote: none,
-  mitex: none,
+  math: none,
   h1-level: 1,
   raw-typst: true,
   scope: (:),
@@ -106,7 +106,7 @@ The parameters are as follows:
 	You can set this to `read("somefile.md")` to import an external markdown file;
 	see the
 	[documentation for the read function](https://typst.app/docs/reference/data-loading/read/).
-	- Accepted values: All strings or raw text.
+	- Accepted values: All strings or raw text code block.
 	- Required.
 
 - `smart-punctuation`:
@@ -138,12 +138,12 @@ The parameters are as follows:
 	#(box.with(stroke: (left: 1pt + black), inset: (left: 5pt, y: 6pt)))[which displays like this.]
 	-->
 
-- `mitex`:
-  A `mitex` callback function to be used when math equation is encountered in the Markdown,
+- `math`:
+  A `math` callback function to be used when math equation is encountered in the Markdown,
   or `none` if math equation should be treated as normal text.
   Because Typst does not support latex math equation natively,
   the user must configure this.
-  - Accepted values: The `mitex` function imported from [mitex](https://typst.app/universe/package/mitex) package, or `none`.
+  - Accepted values: The `math` function with form `f(block: true, body)`, such as the `mitex` function imported from [mitex](https://typst.app/universe/package/mitex) package, or `none`.
   - Default value: `none`.
 
   For example, to render math equation as a Typst math block,
