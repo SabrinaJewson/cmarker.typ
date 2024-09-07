@@ -143,7 +143,7 @@ The parameters are as follows:
   or `none` if math equation should be treated as normal text.
   Because Typst does not support latex math equation natively,
   the user must configure this.
-  - Accepted values: The `math` function with form `f(block: true, body)`, such as the `mitex` function imported from [mitex](https://typst.app/universe/package/mitex) package, or `none`.
+  - Accepted values: The `math` function with form `f(block: true, latex-text)`, such as the `mitex` function imported from [mitex](https://typst.app/universe/package/mitex) package, or `none`.
   - Default value: `none`.
 
   For example, to render math equation as a Typst math block,

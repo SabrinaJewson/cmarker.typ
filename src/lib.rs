@@ -225,16 +225,16 @@ fn inner(markdown: &str, options: Options, h1_level: u8) -> Result<Vec<u8>, Stri
 
             InlineMath(s) => {
                 // We use #inlinemath(`…`) for inline math
-                result.extend_from_slice(b"#inlinemath(````tex\n");
-                result.extend_from_slice(s.as_bytes());
-                result.extend_from_slice(b"\n````)");
+                result.extend_from_slice(b"#inlinemath(\"");
+                escape_string(s.as_bytes(), &mut result);
+                result.extend_from_slice(b"\")");
             }
 
             DisplayMath(s) => {
                 // We use #displaymath(`…`) for display math
-                result.extend_from_slice(b"#displaymath(````tex\n");
-                result.extend_from_slice(s.as_bytes());
-                result.extend_from_slice(b"\n````)");
+                result.extend_from_slice(b"#displaymath(\"");
+                escape_string(s.as_bytes(), &mut result);
+                result.extend_from_slice(b"\")");
             }
 
             SoftBreak => result.push(b' '),
@@ -394,19 +394,16 @@ mod tests {
 
     #[test]
     fn math() {
-        assert_eq!(with_math("$x$"), "#inlinemath(````tex\nx\n````)\n\n");
+        assert_eq!(with_math("$x$"), "#inlinemath(\"x\")\n\n");
         assert_eq!(
             with_math("$\\alpha + \\beta$"),
-            "#inlinemath(````tex\n\\alpha + \\beta\n````)\n\n"
+            "#inlinemath(\"\\\\alpha + \\\\beta\")\n\n"
         );
-        assert_eq!(with_math("$$x$$"), "#displaymath(````tex\nx\n````)\n\n");
-        assert_eq!(with_math("a$x$b"), "a#inlinemath(````tex\nx\n````)b\n\n");
+        assert_eq!(with_math("$$x$$"), "#displaymath(\"x\")\n\n");
+        assert_eq!(with_math("a$x$b"), "a#inlinemath(\"x\")b\n\n");
         assert_eq!(render_("a$x$b"), "a\\$x\\$b\n\n");
         assert_eq!(render_("a$$x$$b"), "a\\$\\$x\\$\\$b\n\n");
-        assert_eq!(
-            with_math("$$\nx\n$$"),
-            "#displaymath(````tex\n\nx\n\n````)\n\n"
-        );
+        assert_eq!(with_math("$$\nx\n$$"), "#displaymath(\"\nx\n\")\n\n");
     }
 
     #[test]
