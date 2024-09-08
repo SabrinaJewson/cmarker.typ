@@ -37,7 +37,7 @@ and import it directly into Typst.
 <td>
 
 ```typst
-#import "@preview/cmarker:0.1.0"
+#import "@preview/cmarker:0.1.1"
 
 #cmarker.render(read("simple.md"))
 ```
@@ -64,7 +64,7 @@ and import it directly into Typst.
 	[`simple.typ`],
 	[`simple.md`],
 	[```typst
-#import "@preview/cmarker:0.1.0"
+#import "@preview/cmarker:0.1.1"
 
 #cmarker.render(read("simple.md"))
 	```],
@@ -318,7 +318,7 @@ We just have to be clever about how we write the README:
 (Typst preamble content)
 #"</picture>
 <!--".slice(0,0)
-#import "@preview/cmarker:0.1.0"
+#import "@preview/cmarker:0.1.1"
 #let markdown = read("README.md")
 #markdown = markdown.slice(markdown.position("</picture>") + "</picture>".len())
 #cmarker.render(markdown, h1-level: 0)
@@ -336,7 +336,7 @@ The same code but syntax-highlighted as Typst code helps to illuminate it:
 (Typst preamble content)
 #"</picture>
 <!--".slice(0,0)
-#import "@preview/cmarker:0.1.0"
+#import "@preview/cmarker:0.1.1"
 #let markdown = read("README.md")
 #markdown = markdown.slice(markdown.position("</picture>") + "</picture>".len())
 #cmarker.render(markdown, h1-level: 0)
