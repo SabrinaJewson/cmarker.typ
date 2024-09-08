@@ -11,7 +11,7 @@ crate-type = ["cdylib"]
 bitflags = "2.4.1"
 itoa = "1.0.9"
 memchr = "2.6.4"
-pulldown-cmark = { version = "0.9.3", default-features = false }
+pulldown-cmark = { version = "0.12.1", default-features = false }
 wasm-minimal-protocol.git = "https://github.com/astrale-sharp/wasm-minimal-protocol"
 wasm-minimal-protocol.rev = "637508c184c7bfad7caadf109e2fa3871d99c57e"
 

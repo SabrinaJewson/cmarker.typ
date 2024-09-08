@@ -8,12 +8,15 @@ bitflags! {
         const SMART_PUNCTUATION = 0b0000_0001;
         const BLOCKQUOTE = 0b0000_0010;
         const RAW_TYPST = 0b0000_0100;
+        const MATH = 0b0000_1000;
     }
 }
 
 #[wasm_func]
 fn render(markdown: &[u8], options: &[u8]) -> Result<Vec<u8>, String> {
-    let &[options, h1_level] = options else { panic!() };
+    let &[options, h1_level] = options else {
+        panic!()
+    };
     let options = Options::from_bits(options).unwrap();
     let markdown = str::from_utf8(markdown).unwrap();
     inner(markdown, options, h1_level)
@@ -25,6 +28,9 @@ fn inner(markdown: &str, options: Options, h1_level: u8) -> Result<Vec<u8>, Stri
     if options.contains(Options::SMART_PUNCTUATION) {
         markdown_options |= pulldown_cmark::Options::ENABLE_SMART_PUNCTUATION;
     }
+    if options.contains(Options::MATH) {
+        markdown_options |= pulldown_cmark::Options::ENABLE_MATH;
+    }
 
     let mut result = Vec::new();
 
@@ -33,38 +39,43 @@ fn inner(markdown: &str, options: Options, h1_level: u8) -> Result<Vec<u8>, Stri
     while let Some(event) = next_event.take().or_else(|| parser.next()) {
         use pulldown_cmark::CodeBlockKind;
         use pulldown_cmark::Event::*;
-        use pulldown_cmark::Tag::*;
+        use pulldown_cmark::{Tag, TagEnd};
         match event {
-            Start(Paragraph) => {}
-            End(Paragraph) => result.extend_from_slice(b"\n\n"),
+            Start(Tag::Paragraph) => {}
+            End(TagEnd::Paragraph) => result.extend_from_slice(b"\n\n"),
 
-            Start(Heading(level, _, _)) => {
+            Start(Tag::Heading {
+                level,
+                id: _,
+                classes: _,
+                attrs: _,
+            }) => {
                 result.push(b'\n');
                 let equal_signs = level as usize - 1 + usize::from(h1_level);
                 result.resize(result.len() + equal_signs, b'=');
                 result.push(b' ');
             }
-            End(Heading(_, _, _)) => result.extend_from_slice(b"\n"),
+            End(TagEnd::Heading(_)) => result.extend_from_slice(b"\n"),
 
-            Start(BlockQuote) => {
+            Start(Tag::BlockQuote(_)) => {
                 if options.contains(Options::BLOCKQUOTE) {
                     result.extend_from_slice(b"#blockquote[");
                 }
             }
-            End(BlockQuote) => {
+            End(TagEnd::BlockQuote(_)) => {
                 if options.contains(Options::BLOCKQUOTE) {
                     result.extend_from_slice(b"]\n\n");
                 }
             }
 
-            Start(Strikethrough) => {
+            Start(Tag::Strikethrough) => {
                 result.extend_from_slice(b"#strike[");
             }
-            End(Strikethrough) => {
+            End(TagEnd::Strikethrough) => {
                 result.extend_from_slice(b"]");
             }
 
-            Start(CodeBlock(kind)) => {
+            Start(Tag::CodeBlock(kind)) => {
                 result.extend_from_slice(b"#raw(block:true,");
                 if let CodeBlockKind::Fenced(lang) = kind {
                     if !lang.is_empty() {
@@ -77,15 +88,15 @@ fn inner(markdown: &str, options: Options, h1_level: u8) -> Result<Vec<u8>, Stri
                 loop {
                     match parser.next().unwrap() {
                         Text(text) => escape_string(text.as_bytes(), &mut result),
-                        End(CodeBlock(_)) => break,
+                        End(TagEnd::CodeBlock) => break,
                         other => return Err(format!("unexpected {other:?} in code block")),
                     }
                 }
                 result.extend_from_slice(b"\")\n");
             }
-            End(CodeBlock(_)) => unreachable!(),
+            End(TagEnd::CodeBlock) => unreachable!(),
 
-            Start(List(first)) => {
+            Start(Tag::List(first)) => {
                 if let Some(first) = first {
                     result.extend_from_slice(b"#enum(start:");
                     result.extend_from_slice(itoa::Buffer::new().format(first).as_bytes());
@@ -94,40 +105,69 @@ fn inner(markdown: &str, options: Options, h1_level: u8) -> Result<Vec<u8>, Stri
                     result.extend_from_slice(b"#list(");
                 }
             }
-            End(List(_)) => result.extend_from_slice(b")\n"),
-            Start(Item) => result.push(b'['),
-            End(Item) => result.extend_from_slice(b"],"),
+            End(TagEnd::List(_)) => result.extend_from_slice(b")\n"),
+            Start(Tag::Item) => result.push(b'['),
+            End(TagEnd::Item) => result.extend_from_slice(b"],"),
 
             // TODO: Tables
-            Start(Table(_)) => todo!(),
-            End(Table(_)) => todo!(),
-            Start(TableHead | TableRow | TableCell) => todo!(),
-            End(TableHead | TableRow | TableCell) => todo!(),
+            Start(Tag::Table(_)) => todo!(),
+            End(TagEnd::Table) => todo!(),
+            Start(Tag::TableHead | Tag::TableRow | Tag::TableCell) => todo!(),
+            End(TagEnd::TableHead | TagEnd::TableRow | TagEnd::TableCell) => todo!(),
 
-            Start(Emphasis) | End(Emphasis) => result.push(b'_'),
-            Start(Strong) | End(Strong) => result.push(b'*'),
+            Start(Tag::Emphasis) | End(TagEnd::Emphasis) => result.push(b'_'),
+            Start(Tag::Strong) | End(TagEnd::Strong) => result.push(b'*'),
 
-            Start(Link(_, destination, _)) => {
+            Start(Tag::Link {
+                link_type: _,
+                dest_url,
+                title: _,
+                id: _,
+            }) => {
                 result.extend_from_slice(b"#link(\"");
-                escape_string(destination.as_bytes(), &mut result);
+                escape_string(dest_url.as_bytes(), &mut result);
                 result.extend_from_slice(b"\")[");
             }
-            End(Link(_, _, _)) => result.push(b']'),
+            End(TagEnd::Link) => result.push(b']'),
 
-            Start(Image(_, path, _)) => {
+            Start(Tag::Image {
+                link_type: _,
+                dest_url,
+                title: _,
+                id: _,
+            }) => {
                 result.extend_from_slice(b"#image(\"");
-                escape_string(path.as_bytes(), &mut result);
+                escape_string(dest_url.as_bytes(), &mut result);
                 result.extend_from_slice(b"\",alt:\"");
                 loop {
                     match parser.next().unwrap() {
                         Text(text) => escape_string(text.as_bytes(), &mut result),
-                        End(Image(_, _, _)) => break,
+                        End(TagEnd::Image) => break,
                         other => return Err(format!("unexpected {other:?} in image alt text")),
                     }
                 }
                 result.extend_from_slice(b"\")");
             }
-            End(Image(_, _, _)) => unreachable!(),
+            End(TagEnd::Image) => unreachable!(),
+
+            Start(
+                Tag::FootnoteDefinition(_)
+                | Tag::DefinitionList
+                | Tag::DefinitionListDefinition
+                | Tag::DefinitionListTitle
+                | Tag::MetadataBlock(_),
+            ) => todo!(),
+
+            End(
+                TagEnd::FootnoteDefinition
+                | TagEnd::DefinitionList
+                | TagEnd::DefinitionListDefinition
+                | TagEnd::DefinitionListTitle
+                | TagEnd::MetadataBlock(_),
+            ) => todo!(),
+
+            Start(Tag::HtmlBlock) => {}
+            End(TagEnd::HtmlBlock) => {}
 
             Text(text) => escape_text(text.as_bytes(), &mut result),
 
@@ -138,18 +178,20 @@ fn inner(markdown: &str, options: Options, h1_level: u8) -> Result<Vec<u8>, Stri
             }
 
             // We can’t support HTML, so just obliterate it
-            Html(s) => {
+            Html(s) | InlineHtml(s) => {
                 let raw_typst_start = b"<!--raw-typst";
                 if memmem::find(s.as_bytes(), b"<!--typst-begin-exclude-->").is_some() {
                     let mut layers = 0;
                     for event in &mut parser {
                         match event {
-                            Html(s) => {
+                            Html(s) | InlineHtml(s) => {
                                 if memmem::find(s.as_bytes(), b"<!--typst-end-exclude-->").is_some()
                                 {
                                     break;
                                 }
                             }
+                            Start(Tag::HtmlBlock) => {}
+                            End(TagEnd::HtmlBlock) => {}
                             Start(_) => layers += 1,
                             End(_) if layers != 0 => layers -= 1,
                             End(_) => {
@@ -160,7 +202,8 @@ fn inner(markdown: &str, options: Options, h1_level: u8) -> Result<Vec<u8>, Stri
                         }
                     }
                 } else if !options.contains(Options::RAW_TYPST) {
-                    // Don’t allow injecting raw Typst code if the user disables it
+                    // Don’t allow injecting raw Typst code if the user disables
+                    // it
                 } else if let Some(i) = memmem::find(s.as_bytes(), raw_typst_start) {
                     let mut event = CowStr::Borrowed(&s[i + raw_typst_start.len()..]);
                     loop {
@@ -180,13 +223,25 @@ fn inner(markdown: &str, options: Options, h1_level: u8) -> Result<Vec<u8>, Stri
                 }
             }
 
+            InlineMath(s) => {
+                // We use #inlinemath(`…`) for inline math
+                result.extend_from_slice(b"#inlinemath(\"");
+                escape_string(s.as_bytes(), &mut result);
+                result.extend_from_slice(b"\")");
+            }
+
+            DisplayMath(s) => {
+                // We use #displaymath(`…`) for display math
+                result.extend_from_slice(b"#displaymath(\"");
+                escape_string(s.as_bytes(), &mut result);
+                result.extend_from_slice(b"\")");
+            }
+
             SoftBreak => result.push(b' '),
             HardBreak => result.extend_from_slice(b"\\ "),
 
             Rule => result.extend_from_slice(b"#line(length:100%)\n"),
 
-            // Not possible, since we currently disable these features
-            Start(FootnoteDefinition(_)) | End(FootnoteDefinition(_)) => unreachable!(),
             FootnoteReference(_) => unreachable!(),
             TaskListMarker(_) => unreachable!(),
         }
@@ -247,7 +302,7 @@ mod tests {
     #[test]
     fn lines() {
         assert_eq!(render_("a\nb"), "a b\n\n");
-        assert_eq!(render_("a \nb"), "a  b\n\n");
+        assert_eq!(render_("a \nb"), "a b\n\n");
         assert_eq!(render_("a  \nb"), "a\\ b\n\n");
         assert_eq!(render_("a\n\nb"), "a\n\nb\n\n");
     }
@@ -338,6 +393,20 @@ mod tests {
     }
 
     #[test]
+    fn math() {
+        assert_eq!(with_math("$x$"), "#inlinemath(\"x\")\n\n");
+        assert_eq!(
+            with_math("$\\alpha + \\beta$"),
+            "#inlinemath(\"\\\\alpha + \\\\beta\")\n\n"
+        );
+        assert_eq!(with_math("$$x$$"), "#displaymath(\"x\")\n\n");
+        assert_eq!(with_math("a$x$b"), "a#inlinemath(\"x\")b\n\n");
+        assert_eq!(render_("a$x$b"), "a\\$x\\$b\n\n");
+        assert_eq!(render_("a$$x$$b"), "a\\$\\$x\\$\\$b\n\n");
+        assert_eq!(with_math("$$\nx\n$$"), "#displaymath(\"\nx\n\")\n\n");
+    }
+
+    #[test]
     fn exclude() {
         assert_eq!(
             render_("<!--typst-begin-exclude-->\na\n<!--typst-end-exclude-->"),
@@ -378,6 +447,9 @@ mod tests {
     }
     fn with_blockquote(s: &str) -> String {
         render(s, Options::BLOCKQUOTE, 1)
+    }
+    fn with_math(s: &str) -> String {
+        render(s, Options::MATH, 1)
     }
     fn with_raw_typst(s: &str) -> String {
         render(s, Options::RAW_TYPST, 1)
