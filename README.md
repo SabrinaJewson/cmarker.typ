@@ -106,7 +106,7 @@ The parameters are as follows:
 	You can set this to `read("somefile.md")` to import an external markdown file;
 	see the
 	[documentation for the read function](https://typst.app/docs/reference/data-loading/read/).
-	- Accepted values: All strings or raw text code block.
+	- Accepted values: Strings and raw text code blocks.
 	- Required.
 
 - `smart-punctuation`:
@@ -139,22 +139,26 @@ The parameters are as follows:
 	-->
 
 - `math`:
-  A `math` callback function to be used when math equation is encountered in the Markdown,
-  or `none` if math equation should be treated as normal text.
-  Because Typst does not support latex math equation natively,
-  the user must configure this.
-  - Accepted values: The `math` function with form `f(block: true, latex-text)`, such as the `mitex` function imported from [mitex](https://typst.app/universe/package/mitex) package, or `none`.
-  - Default value: `none`.
+	A callback to be used when equations are encountered in the Markdown,
+	or `none` if it should be treated as normal text.
+	Because Typst does not support LaTeX equations natively,
+	the user must configure this.
+	- Accepted values:
+		Functions that take a boolean argument named `block` and a positional string argument
+		(often, the `mitex` function from
+		[the mitex package](https://typst.app/universe/package/mitex)),
+		or `none`.
+	- Default value: `none`.
 
-  For example, to render math equation as a Typst math block,
-  one can use:
-  ```typ
-  #import "@preview/mitex:0.2.4": mitex
-  #cmarker.render(`$\int_1^2 x \mathrm{d} x$`, mitex: mitex)
-  ```
-  <!--raw-typst
-  $integral_1^2 x dd x$
-  -->
+	For example, to render math equation as a Typst math block,
+	one can use:
+	```typc
+	#import "@preview/mitex:0.2.4": mitex
+	#cmarker.render(`$\int_1^2 x \mathrm{d} x$`, math: mitex)
+	```
+	<!--raw-typst
+	which renders as: $integral_1^2 x dif x$
+	-->
 
 - `h1-level`:
 	The level that top-level headings in Markdown should get in Typst.
@@ -209,7 +213,6 @@ We support CommonMark with a couple extensions.
 - `*emphasis*` or `_emphasis_`: *emphasis*
 - `**strong**` or `__strong__`: **strong**
 - `~strikethrough~`: ~strikethrough~
-- `$x + y$` or `$$x + y$$`: math equation with [mitex](https://typst.app/universe/package/mitex) package.
 - `[links](https://example.org)`: [links](https://example.org/)
 - `### Headings`, where `#` is a top-level heading,
 	`##` a subheading, `###` a sub-subheading, etc
@@ -247,6 +250,7 @@ We support CommonMark with a couple extensions.
 	```
 	1. Ordered
 	1. Lists
+- `$x + y$` or `$$x + y$$`: math equations, if the `math` parameter is set.
 - `> blockquotes`, if the `blockquote` parameter is set.
 - Images: `![Some tiled hexagons](examples/hexagons.png)`, giving
 	![Some tiled hexagons](examples/hexagons.png)
