@@ -94,6 +94,7 @@ render(
   math: none,
   h1-level: 1,
   raw-typst: true,
+  table: true,
   scope: (:),
   show-source: false,
 ) -> content
@@ -185,6 +186,12 @@ The parameters are as follows:
 	(but only when rendered through Typst).
 	See also `<!--typst-begin-exclude-->` and `<!--typst-end-exclude-->`,
 	which is the inverse of this.
+
+- `table`:
+  Whether to convert markdown table to typst tables.
+  If disabled, the markdown table will be ignored.
+  - Accepted values: Booleans,
+  - Default value: `true`.
 
 - `scope`:
 	When `raw-typst` is enabled,

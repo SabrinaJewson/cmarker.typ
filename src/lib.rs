@@ -9,6 +9,7 @@ bitflags! {
         const BLOCKQUOTE = 0b0000_0010;
         const RAW_TYPST = 0b0000_0100;
         const MATH = 0b0000_1000;
+        const TABLE = 0b0001_0000;
     }
 }
 
@@ -30,6 +31,9 @@ fn inner(markdown: &str, options: Options, h1_level: u8) -> Result<Vec<u8>, Stri
     }
     if options.contains(Options::MATH) {
         markdown_options |= pulldown_cmark::Options::ENABLE_MATH;
+    }
+    if options.contains(Options::TABLE) {
+        markdown_options |= pulldown_cmark::Options::ENABLE_TABLES;
     }
 
     let mut result = Vec::new();
@@ -109,11 +113,33 @@ fn inner(markdown: &str, options: Options, h1_level: u8) -> Result<Vec<u8>, Stri
             Start(Tag::Item) => result.push(b'['),
             End(TagEnd::Item) => result.extend_from_slice(b"],"),
 
-            // TODO: Tables
-            Start(Tag::Table(_)) => todo!(),
-            End(TagEnd::Table) => todo!(),
-            Start(Tag::TableHead | Tag::TableRow | Tag::TableCell) => todo!(),
-            End(TagEnd::TableHead | TagEnd::TableRow | TagEnd::TableCell) => todo!(),
+            Start(Tag::Table(alignment_vector)) => {
+                let alignment_to_string = alignment_vector
+                    .iter()
+                    .map(|align| match align {
+                        Alignment::Left => "left",
+                        Alignment::Right => "right",
+                        Alignment::Center => "center",
+                        Alignment::None => "auto",
+                    })
+                    .collect::<Vec<&str>>();
+
+                result.extend_from_slice(b"#table(align: [");
+                result.extend_from_slice(alignment_to_string.join(",").as_bytes());
+                result.extend_from_slice(b"]");
+                result.extend_from_slice(b", columns: ");
+                result.extend_from_slice(alignment_vector.len().to_string().as_bytes());
+                result.extend_from_slice(b", ");
+            }
+            End(TagEnd::Table) => result.extend_from_slice(b")"),
+            Start(Tag::TableHead) => result.extend_from_slice(b"table.header("),
+            End(TagEnd::TableHead) => result.extend_from_slice(b"),"),
+
+            Start(Tag::TableRow) => {}
+            End(TagEnd::TableRow) => {}
+
+            Start(Tag::TableCell) => result.extend_from_slice(b"["),
+            End(TagEnd::TableCell) => result.extend_from_slice(b"],"),
 
             Start(Tag::Emphasis) | End(TagEnd::Emphasis) => result.push(b'_'),
             Start(Tag::Strong) | End(TagEnd::Strong) => result.push(b'*'),
@@ -439,6 +465,11 @@ mod tests {
         assert_eq!(render_("<!--raw-typst\n\n#(1+1)\n\n-->\nb"), "b\n\n");
     }
 
+    #[test]
+    fn table() {
+        assert_eq!(with_table("| Column 1      | Column 2      |\n| ------------- | ------------- |\n| Cell 1, Row 1 | Cell 2, Row 1 |\n| Cell 1, Row 2 | Cell 2, Row 2 |"),"#table(columns: 2, table.header([Column 1],[Column 2],),[Cell 1, Row 1],[Cell 2, Row 1],[Cell 1, Row 2],[Cell 2, Row 2],) ");
+    }
+
     fn with_h1_level(s: &str, h1_level: u8) -> String {
         render(s, Options::empty(), h1_level)
     }
@@ -453,6 +484,9 @@ mod tests {
     }
     fn with_raw_typst(s: &str) -> String {
         render(s, Options::RAW_TYPST, 1)
+    }
+    fn with_table(s: &str) -> String {
+        render(s, Options::TABLE, 1)
     }
     fn render_(s: &str) -> String {
         render(s, Options::empty(), 1)
@@ -497,6 +531,7 @@ mod tests {
 use bitflags::bitflags;
 use memchr::memchr;
 use memchr::memmem;
+use pulldown_cmark::Alignment;
 use pulldown_cmark::CowStr;
 use std::str;
 use wasm_minimal_protocol::wasm_func;
