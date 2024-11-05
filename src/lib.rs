@@ -124,9 +124,9 @@ fn inner(markdown: &str, options: Options, h1_level: u8) -> Result<Vec<u8>, Stri
                     })
                     .collect::<Vec<&str>>();
 
-                result.extend_from_slice(b"#table(align: [");
+                result.extend_from_slice(b"#table(align: (");
                 result.extend_from_slice(alignment_to_string.join(",").as_bytes());
-                result.extend_from_slice(b"]");
+                result.extend_from_slice(b")");
                 result.extend_from_slice(b", columns: ");
                 result.extend_from_slice(alignment_vector.len().to_string().as_bytes());
                 result.extend_from_slice(b", ");
@@ -467,7 +467,7 @@ mod tests {
 
     #[test]
     fn table() {
-        assert_eq!(with_table("| Column 1      | Column 2      |\n| ------------- | ------------- |\n| Cell 1, Row 1 | Cell 2, Row 1 |\n| Cell 1, Row 2 | Cell 2, Row 2 |"),"#table(columns: 2, table.header([Column 1],[Column 2],),[Cell 1, Row 1],[Cell 2, Row 1],[Cell 1, Row 2],[Cell 2, Row 2],) ");
+        assert_eq!(with_table("| Column 1      | Column 2      |\n| ------------- | ------------- |\n| Cell 1, Row 1 | Cell 2, Row 1 |\n| Cell 1, Row 2 | Cell 2, Row 2 |"),"#table(align: (auto,auto), columns: 2, table.header([Column 1],[Column 2],),[Cell 1, Row 1],[Cell 2, Row 1],[Cell 1, Row 2],[Cell 2, Row 2],)");
     }
 
     fn with_h1_level(s: &str, h1_level: u8) -> String {
