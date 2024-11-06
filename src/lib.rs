@@ -24,7 +24,8 @@ fn render(markdown: &[u8], options: &[u8]) -> Result<Vec<u8>, String> {
 
 fn inner(markdown: &str, options: Options, h1_level: u8) -> Result<Vec<u8>, String> {
     // TODO: Enable footnotes
-    let mut markdown_options = pulldown_cmark::Options::ENABLE_STRIKETHROUGH | pulldown_cmark::Options::ENABLE_TABLES;
+    let mut markdown_options =
+        pulldown_cmark::Options::ENABLE_STRIKETHROUGH | pulldown_cmark::Options::ENABLE_TABLES;
     if options.contains(Options::SMART_PUNCTUATION) {
         markdown_options |= pulldown_cmark::Options::ENABLE_SMART_PUNCTUATION;
     }
@@ -122,7 +123,11 @@ fn inner(markdown: &str, options: Options, h1_level: u8) -> Result<Vec<u8>, Stri
 
                 result.extend_from_slice(b")");
                 result.extend_from_slice(b",columns:");
-                result.extend_from_slice(itoa::Buffer::new().format(alignment_vector.len()).as_bytes());
+                result.extend_from_slice(
+                    itoa::Buffer::new()
+                        .format(alignment_vector.len())
+                        .as_bytes(),
+                );
                 result.extend_from_slice(b",");
             }
             End(TagEnd::Table) => result.extend_from_slice(b")"),
@@ -461,11 +466,35 @@ mod tests {
 
     #[test]
     fn table() {
-        assert_eq!(with_table("| Column 1      | Column 2      |\n| ------------- | ------------- |\n| Cell 1, Row 1 | Cell 2, Row 1 |\n| Cell 1, Row 2 | Cell 2, Row 2 |"),"#table(align: (auto,auto), columns: 2, table.header([Column 1],[Column 2],),[Cell 1, Row 1],[Cell 2, Row 1],[Cell 1, Row 2],[Cell 2, Row 2],)");
+        let example_markdown_table = concat!(
+            "| Column 1      | Column 2      |\n",
+            "| ------------- | ------------- |\n",
+            "| Cell 1, Row 1 | Cell 2, Row 1 |\n",
+            "| Cell 1, Row 2 | Cell 2, Row 2 |",
+        );
+        let example_typst_output = concat!(
+            "#table(align:(auto,auto,),columns:2,",
+            "table.header([Column 1],[Column 2],),",
+            "[Cell 1, Row 1],[Cell 2, Row 1],",
+            "[Cell 1, Row 2],[Cell 2, Row 2],)",
+        );
+        assert_eq!(render_(example_markdown_table), example_typst_output);
 
+        let missing_cell_markdown_table = concat!(
+            "| a | b | c |\n",
+            "| - | - | - |\n",
+            "| d | e |\n",
+            "| f | g | h | i |",
+        );
+        let missing_cell_typst_output = concat!(
+            "#table(align:(auto,auto,auto,),columns:3,",
+            "table.header([a],[b],[c],),",
+            "[d],[e],[],",
+            "[f],[g],[h],)",
+        );
         assert_eq!(
-            with_table("| a | b | c |\n| - | - | - |\n| d | e |\n| f | g | h | i |"),
-            ""
+            render_(missing_cell_markdown_table),
+            missing_cell_typst_output
         );
     }
 
@@ -483,9 +512,6 @@ mod tests {
     }
     fn with_raw_typst(s: &str) -> String {
         render(s, Options::RAW_TYPST, 1)
-    }
-    fn with_table(s: &str) -> String {
-        render(s, Options::TABLE, 1)
     }
     fn render_(s: &str) -> String {
         render(s, Options::empty(), 1)
