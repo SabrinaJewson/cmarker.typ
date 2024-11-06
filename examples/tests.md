@@ -41,6 +41,8 @@ A horizontal rule:
 - unordered
 - list
 
+	with this paragraph nested in the last list element
+
 Inline math: $\int_1^2 x \mathrm{d} x$
 
 Display math:
@@ -48,8 +50,6 @@ Display math:
 $$
 \int_1^2 x \mathrm{d} x
 $$
-
-	with this paragraph nested in the last list element
 
 We can escape things with backslashes:
 \*asterisks\*,
@@ -89,12 +89,10 @@ Raw Typst code:
 
 <!--raw-typst $ 2 + 2 = #(2 + 2) $-->
 
-| Column 1| Column 2|
-|---------|---------|
-|Row 1 Cell 1 | Row 1 Cell 2|
-|Row 2 Cell 1 | Row 2 Cell 2|
+Tables:
 
-| a | b | c |
-| - | - | - |
-| d | e |
-| f | g | h | i |
+| Left-aligned column | Centred column | Right-aligned column | auto |
+| :--- | :----: | ----: | ---- |
+| 1 | 1 | 1 | 1 |
+| this row is incomplete |
+| this row has extra cells | 1 | 2 | 3 | 4 |
