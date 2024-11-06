@@ -110,9 +110,9 @@ fn inner(markdown: &str, options: Options, h1_level: u8) -> Result<Vec<u8>, Stri
             Start(Tag::Item) => result.push(b'['),
             End(TagEnd::Item) => result.extend_from_slice(b"],"),
 
-            Start(Tag::Table(alignment_vector)) => {
+            Start(Tag::Table(alignments)) => {
                 result.extend_from_slice(b"#table(align:(");
-                for align in &alignment_vector {
+                for align in &alignments {
                     result.extend_from_slice(match align {
                         Alignment::Left => b"left,",
                         Alignment::Right => b"right,",
@@ -120,14 +120,9 @@ fn inner(markdown: &str, options: Options, h1_level: u8) -> Result<Vec<u8>, Stri
                         Alignment::None => b"auto,",
                     });
                 }
-
-                result.extend_from_slice(b")");
-                result.extend_from_slice(b",columns:");
-                result.extend_from_slice(
-                    itoa::Buffer::new()
-                        .format(alignment_vector.len())
-                        .as_bytes(),
-                );
+                result.extend_from_slice(b"),columns:");
+                let mut columns = itoa::Buffer::new();
+                result.extend_from_slice(columns.format(alignments.len()).as_bytes());
                 result.extend_from_slice(b",");
             }
             End(TagEnd::Table) => result.extend_from_slice(b")"),
@@ -227,8 +222,7 @@ fn inner(markdown: &str, options: Options, h1_level: u8) -> Result<Vec<u8>, Stri
                         }
                     }
                 } else if !options.contains(Options::RAW_TYPST) {
-                    // Don’t allow injecting raw Typst code if the user disables
-                    // it
+                    // Don’t allow injecting raw Typst code if the user disables it
                 } else if let Some(i) = memmem::find(s.as_bytes(), raw_typst_start) {
                     let mut event = CowStr::Borrowed(&s[i + raw_typst_start.len()..]);
                     loop {
@@ -466,36 +460,33 @@ mod tests {
 
     #[test]
     fn table() {
-        let example_markdown_table = concat!(
+        let example_md = concat!(
             "| Column 1      | Column 2      |\n",
             "| ------------- | ------------- |\n",
             "| Cell 1, Row 1 | Cell 2, Row 1 |\n",
             "| Cell 1, Row 2 | Cell 2, Row 2 |",
         );
-        let example_typst_output = concat!(
+        let example_typst = concat!(
             "#table(align:(auto,auto,),columns:2,",
             "table.header([Column 1],[Column 2],),",
             "[Cell 1, Row 1],[Cell 2, Row 1],",
             "[Cell 1, Row 2],[Cell 2, Row 2],)",
         );
-        assert_eq!(render_(example_markdown_table), example_typst_output);
+        assert_eq!(render_(example_md), example_typst);
 
-        let missing_cell_markdown_table = concat!(
+        let missing_cell_md = concat!(
             "| a | b | c |\n",
             "| - | - | - |\n",
             "| d | e |\n",
             "| f | g | h | i |",
         );
-        let missing_cell_typst_output = concat!(
+        let missing_cell_typst = concat!(
             "#table(align:(auto,auto,auto,),columns:3,",
             "table.header([a],[b],[c],),",
             "[d],[e],[],",
             "[f],[g],[h],)",
         );
-        assert_eq!(
-            render_(missing_cell_markdown_table),
-            missing_cell_typst_output
-        );
+        assert_eq!(render_(missing_cell_md), missing_cell_typst);
     }
 
     fn with_h1_level(s: &str, h1_level: u8) -> String {
