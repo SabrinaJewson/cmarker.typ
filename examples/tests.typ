@@ -1,4 +1,4 @@
-#import "../lib.typ" as cmarker
+#import "cmarker/lib.typ" as cmarker
 #import "@preview/mitex:0.2.4": mitex
 
 #cmarker.render(
@@ -7,4 +7,5 @@
   raw-typst: true,
   math: mitex,
   show-source: false,
+  scope: (image: (path, alt: none) => image(path, alt: alt)),
 )

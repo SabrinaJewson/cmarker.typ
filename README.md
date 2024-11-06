@@ -182,6 +182,25 @@ The parameters are as follows:
 
 This function returns the rendered `content`.
 
+## Resolving Paths Correctly
+
+Because of how Typst handles paths,
+elements like images will by default resolve
+relative to the project root of `cmarker` itself
+and not your project.
+
+To fix this,
+one can override the `image` function in the scope the Typst code is evaluated.
+
+```typst
+#import "@preview/cmarker:0.1.1"
+
+#cmarker.render(
+  read("yourfile.md"),
+  scope: (image: (path, alt: none) => image(path, alt: alt))
+)
+```
+
 ## Supported Markdown Syntax
 
 We support CommonMark with a couple extensions.

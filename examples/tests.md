@@ -96,3 +96,7 @@ Tables:
 | 1 | 1 | 1 | 1 |
 | this row is incomplete |
 | this row has extra cells | 1 | 2 | 3 | 4 |
+
+Images:
+
+![hexagons](hexagons.png)

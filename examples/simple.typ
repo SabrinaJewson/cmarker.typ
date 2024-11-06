@@ -1,3 +1,3 @@
-#import "../lib.typ" as cmarker
+#import "cmarker/lib.typ" as cmarker
 
 #cmarker.render(read("simple.md"))

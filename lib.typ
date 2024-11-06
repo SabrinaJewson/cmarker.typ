@@ -31,13 +31,6 @@
   if show-source {
     raw(rendered, block: true, lang: "typ")
   } else {
-    eval(
-      rendered,
-      mode: "markup",
-      scope: (
-        image: (..args) => image(..args),
-        ..scope,
-      ),
-    )
+    eval(rendered, mode: "markup", scope: scope)
   }
 }
