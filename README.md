@@ -1,23 +1,3 @@
-<picture>
-#set document(title: "cmarker.typ")
-#set page(numbering: "1", number-align: center)
-#set text(lang: "en")
-#align(center, text(weight: 700, 1.75em)[cmarker.typ])
-#set heading(numbering: "1.")
-#show link: c => text(underline(c), fill: blue)
-#set image(height: 2em)
-#align(center)[https://github.com/SabrinaJewson/cmarker.typ]
-#"</picture>
-<!--".slice(0,0)
-#import "lib.typ" as cmarker
-#let markdown = read("README.md")
-#cmarker.render(
-	markdown.slice(markdown.position("</picture>") + "</picture>".len()),
-	h1-level: 0,
-	smart-punctuation: false,
-)
-/*-->
-
 <!--typst-begin-exclude-->
 
 # cmarker
@@ -312,50 +292,6 @@ otherwise it will just be seen as a regular comment and removed):
 
 ```md
 <!--raw-typst Hello from #text(fill:blue)[Typst]!-->
-```
-
-## Markdown–Typst Polyglots
-
-This project has a manual as a PDF and a README as a Markdown document,
-but by the power of this library they are in fact the same thing!
-Furthermore, one can read the `README.md` in a markdown viewer and it will display correctly,
-but one can *also* run `typst compile README.md` to generate the Typst-typeset `README.pdf`.
-
-How does this work?
-We just have to be clever about how we write the README:
-
-```markdown
-<picture>
-(Typst preamble content)
-#"</picture>
-<!--".slice(0,0)
-#import "@preview/cmarker:0.1.1"
-#let markdown = read("README.md")
-#markdown = markdown.slice(markdown.position("</picture>") + "</picture>".len())
-#cmarker.render(markdown, h1-level: 0)
-/*-->
-
-Regular Markdown goes here…
-
-<!--*///-->
-```
-
-The same code but syntax-highlighted as Typst code helps to illuminate it:
-
-```typ
-<picture>
-(Typst preamble content)
-#"</picture>
-<!--".slice(0,0)
-#import "@preview/cmarker:0.1.1"
-#let markdown = read("README.md")
-#markdown = markdown.slice(markdown.position("</picture>") + "</picture>".len())
-#cmarker.render(markdown, h1-level: 0)
-/*-->
-
-Regular Markdown goes here…
-
-<!--*///-->
 ```
 
 ## Limitations
