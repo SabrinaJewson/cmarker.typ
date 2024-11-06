@@ -6,7 +6,6 @@
 #set heading(numbering: "1.")
 #show link: c => text(underline(c), fill: blue)
 #set image(height: 2em)
-#show par: set block(above: 1.2em, below: 1.2em)
 #align(center)[https://github.com/SabrinaJewson/cmarker.typ]
 #"</picture>
 <!--".slice(0,0)
@@ -255,10 +254,17 @@ We support CommonMark with a couple extensions.
 - Images: `![Some tiled hexagons](examples/hexagons.png)`, giving
 	![Some tiled hexagons](examples/hexagons.png)
 - Tables:
-  | Column 1| Column 2|
-  |---------|---------|
-  |Row 1 Cell 1 | Row 1 Cell 2|
-  |Row 2 Cell 1 | Row 2 Cell 2|
+	```md
+	| Column 1 | Column 2 |
+	| -------- | -------- |
+	| Row 1 Cell 1 | Row 1 Cell 2 |
+	| Row 2 Cell 1 | Row 2 Cell 2 |
+	```
+
+| Column 1 | Column 2 |
+| -------- | -------- |
+| Row 1 Cell 1 | Row 1 Cell 2 |
+| Row 2 Cell 1 | Row 2 Cell 2 |
 
 ## Interleaving Markdown and Typst
 
@@ -358,7 +364,7 @@ Regular Markdown goes here…
 	for example, GitHub supports writing `<sub>text</sub>` to get subscript text,
 	but we will render that as simply “text”.
 	In future it would be nice to support a subset of HTML tags.
-- We do not currently support Markdown tables and footnotes.
+- We do not currently support Markdown footnotes.
 	In future it would be good to.
 - Although I tried my best to escape everything correctly,
 	I won’t provide a hard guarantee that everything is fully sandboxed
