@@ -88,3 +88,13 @@ This should not appear.<!--typst-end-exclude-->
 Raw Typst code:
 
 <!--raw-typst $ 2 + 2 = #(2 + 2) $-->
+
+| Column 1| Column 2|
+|---------|---------|
+|Row 1 Cell 1 | Row 1 Cell 2|
+|Row 2 Cell 1 | Row 2 Cell 2|
+
+| a | b | c |
+| - | - | - |
+| d | e |
+| f | g | h | i |

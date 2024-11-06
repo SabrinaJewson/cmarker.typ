@@ -23,8 +23,9 @@ fn render(markdown: &[u8], options: &[u8]) -> Result<Vec<u8>, String> {
 }
 
 fn inner(markdown: &str, options: Options, h1_level: u8) -> Result<Vec<u8>, String> {
-    // TODO: Enable tables and footnotes
-    let mut markdown_options = pulldown_cmark::Options::ENABLE_STRIKETHROUGH;
+    // TODO: Enable footnotes
+    let mut markdown_options =
+        pulldown_cmark::Options::ENABLE_STRIKETHROUGH | pulldown_cmark::Options::ENABLE_TABLES;
     if options.contains(Options::SMART_PUNCTUATION) {
         markdown_options |= pulldown_cmark::Options::ENABLE_SMART_PUNCTUATION;
     }
@@ -109,11 +110,35 @@ fn inner(markdown: &str, options: Options, h1_level: u8) -> Result<Vec<u8>, Stri
             Start(Tag::Item) => result.push(b'['),
             End(TagEnd::Item) => result.extend_from_slice(b"],"),
 
-            // TODO: Tables
-            Start(Tag::Table(_)) => todo!(),
-            End(TagEnd::Table) => todo!(),
-            Start(Tag::TableHead | Tag::TableRow | Tag::TableCell) => todo!(),
-            End(TagEnd::TableHead | TagEnd::TableRow | TagEnd::TableCell) => todo!(),
+            Start(Tag::Table(alignment_vector)) => {
+                result.extend_from_slice(b"#table(align:(");
+                for align in &alignment_vector {
+                    result.extend_from_slice(match align {
+                        Alignment::Left => b"left,",
+                        Alignment::Right => b"right,",
+                        Alignment::Center => b"center,",
+                        Alignment::None => b"auto,",
+                    });
+                }
+
+                result.extend_from_slice(b")");
+                result.extend_from_slice(b",columns:");
+                result.extend_from_slice(
+                    itoa::Buffer::new()
+                        .format(alignment_vector.len())
+                        .as_bytes(),
+                );
+                result.extend_from_slice(b",");
+            }
+            End(TagEnd::Table) => result.extend_from_slice(b")"),
+            Start(Tag::TableHead) => result.extend_from_slice(b"table.header("),
+            End(TagEnd::TableHead) => result.extend_from_slice(b"),"),
+
+            Start(Tag::TableRow) => {}
+            End(TagEnd::TableRow) => {}
+
+            Start(Tag::TableCell) => result.extend_from_slice(b"["),
+            End(TagEnd::TableCell) => result.extend_from_slice(b"],"),
 
             Start(Tag::Emphasis) | End(TagEnd::Emphasis) => result.push(b'_'),
             Start(Tag::Strong) | End(TagEnd::Strong) => result.push(b'*'),
@@ -439,6 +464,40 @@ mod tests {
         assert_eq!(render_("<!--raw-typst\n\n#(1+1)\n\n-->\nb"), "b\n\n");
     }
 
+    #[test]
+    fn table() {
+        let example_markdown_table = concat!(
+            "| Column 1      | Column 2      |\n",
+            "| ------------- | ------------- |\n",
+            "| Cell 1, Row 1 | Cell 2, Row 1 |\n",
+            "| Cell 1, Row 2 | Cell 2, Row 2 |",
+        );
+        let example_typst_output = concat!(
+            "#table(align:(auto,auto,),columns:2,",
+            "table.header([Column 1],[Column 2],),",
+            "[Cell 1, Row 1],[Cell 2, Row 1],",
+            "[Cell 1, Row 2],[Cell 2, Row 2],)",
+        );
+        assert_eq!(render_(example_markdown_table), example_typst_output);
+
+        let missing_cell_markdown_table = concat!(
+            "| a | b | c |\n",
+            "| - | - | - |\n",
+            "| d | e |\n",
+            "| f | g | h | i |",
+        );
+        let missing_cell_typst_output = concat!(
+            "#table(align:(auto,auto,auto,),columns:3,",
+            "table.header([a],[b],[c],),",
+            "[d],[e],[],",
+            "[f],[g],[h],)",
+        );
+        assert_eq!(
+            render_(missing_cell_markdown_table),
+            missing_cell_typst_output
+        );
+    }
+
     fn with_h1_level(s: &str, h1_level: u8) -> String {
         render(s, Options::empty(), h1_level)
     }
@@ -497,6 +556,7 @@ mod tests {
 use bitflags::bitflags;
 use memchr::memchr;
 use memchr::memmem;
+use pulldown_cmark::Alignment;
 use pulldown_cmark::CowStr;
 use std::str;
 use wasm_minimal_protocol::wasm_func;

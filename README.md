@@ -254,6 +254,11 @@ We support CommonMark with a couple extensions.
 - `> blockquotes`, if the `blockquote` parameter is set.
 - Images: `![Some tiled hexagons](examples/hexagons.png)`, giving
 	![Some tiled hexagons](examples/hexagons.png)
+- Tables:
+  | Column 1| Column 2|
+  |---------|---------|
+  |Row 1 Cell 1 | Row 1 Cell 2|
+  |Row 2 Cell 1 | Row 2 Cell 2|
 
 ## Interleaving Markdown and Typst
 
