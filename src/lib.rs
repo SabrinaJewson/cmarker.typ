@@ -9,7 +9,6 @@ bitflags! {
         const BLOCKQUOTE = 0b0000_0010;
         const RAW_TYPST = 0b0000_0100;
         const MATH = 0b0000_1000;
-        const TABLE = 0b0001_0000;
     }
 }
 
@@ -24,16 +23,13 @@ fn render(markdown: &[u8], options: &[u8]) -> Result<Vec<u8>, String> {
 }
 
 fn inner(markdown: &str, options: Options, h1_level: u8) -> Result<Vec<u8>, String> {
-    // TODO: Enable tables and footnotes
-    let mut markdown_options = pulldown_cmark::Options::ENABLE_STRIKETHROUGH;
+    // TODO: Enable footnotes
+    let mut markdown_options = pulldown_cmark::Options::ENABLE_STRIKETHROUGH | pulldown_cmark::Options::ENABLE_TABLES;
     if options.contains(Options::SMART_PUNCTUATION) {
         markdown_options |= pulldown_cmark::Options::ENABLE_SMART_PUNCTUATION;
     }
     if options.contains(Options::MATH) {
         markdown_options |= pulldown_cmark::Options::ENABLE_MATH;
-    }
-    if options.contains(Options::TABLE) {
-        markdown_options |= pulldown_cmark::Options::ENABLE_TABLES;
     }
 
     let mut result = Vec::new();
@@ -114,22 +110,20 @@ fn inner(markdown: &str, options: Options, h1_level: u8) -> Result<Vec<u8>, Stri
             End(TagEnd::Item) => result.extend_from_slice(b"],"),
 
             Start(Tag::Table(alignment_vector)) => {
-                let alignment_to_string = alignment_vector
-                    .iter()
-                    .map(|align| match align {
-                        Alignment::Left => "left",
-                        Alignment::Right => "right",
-                        Alignment::Center => "center",
-                        Alignment::None => "auto",
-                    })
-                    .collect::<Vec<&str>>();
+                result.extend_from_slice(b"#table(align:(");
+                for align in &alignment_vector {
+                    result.extend_from_slice(match align {
+                        Alignment::Left => b"left,",
+                        Alignment::Right => b"right,",
+                        Alignment::Center => b"center,",
+                        Alignment::None => b"auto,",
+                    });
+                }
 
-                result.extend_from_slice(b"#table(align: (");
-                result.extend_from_slice(alignment_to_string.join(",").as_bytes());
                 result.extend_from_slice(b")");
-                result.extend_from_slice(b", columns: ");
-                result.extend_from_slice(alignment_vector.len().to_string().as_bytes());
-                result.extend_from_slice(b", ");
+                result.extend_from_slice(b",columns:");
+                result.extend_from_slice(itoa::Buffer::new().format(alignment_vector.len()).as_bytes());
+                result.extend_from_slice(b",");
             }
             End(TagEnd::Table) => result.extend_from_slice(b")"),
             Start(Tag::TableHead) => result.extend_from_slice(b"table.header("),
@@ -468,6 +462,11 @@ mod tests {
     #[test]
     fn table() {
         assert_eq!(with_table("| Column 1      | Column 2      |\n| ------------- | ------------- |\n| Cell 1, Row 1 | Cell 2, Row 1 |\n| Cell 1, Row 2 | Cell 2, Row 2 |"),"#table(align: (auto,auto), columns: 2, table.header([Column 1],[Column 2],),[Cell 1, Row 1],[Cell 2, Row 1],[Cell 1, Row 2],[Cell 2, Row 2],)");
+
+        assert_eq!(
+            with_table("| a | b | c |\n| - | - | - |\n| d | e |\n| f | g | h | i |"),
+            ""
+        );
     }
 
     fn with_h1_level(s: &str, h1_level: u8) -> String {

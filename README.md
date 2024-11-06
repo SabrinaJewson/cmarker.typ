@@ -13,9 +13,9 @@
 #import "lib.typ" as cmarker
 #let markdown = read("README.md")
 #cmarker.render(
-	markdown.slice(markdown.position("</picture>") + "</picture>".len()),
-	h1-level: 0,
-	smart-punctuation: false,
+  markdown.slice(markdown.position("</picture>") + "</picture>".len()),
+  h1-level: 0,
+  smart-punctuation: false,
 )
 /*-->
 
@@ -60,19 +60,19 @@ and import it directly into Typst.
 
 <!--raw-typst
 #table(
-	columns: (1.2fr, 1fr),
-	[`simple.typ`],
-	[`simple.md`],
-	[```typst
+  columns: (1.2fr, 1fr),
+  [`simple.typ`],
+  [`simple.md`],
+  [```typst
 #import "@preview/cmarker:0.1.1"
 
 #cmarker.render(read("simple.md"))
-	```],
-	[```markdown
+  ```],
+  [```markdown
 # We can write Markdown!
 
 *Using* __lots__ ~of~ `fancy` [features](https://example.org/).
-	```],
+  ```],
 )
 #table(columns: (100%), [`simple.pdf`], image("./examples/simple.png", height: auto))
 -->
@@ -94,7 +94,6 @@ render(
   math: none,
   h1-level: 1,
   raw-typst: true,
-  table: true,
   scope: (:),
   show-source: false,
 ) -> content
@@ -102,111 +101,105 @@ render(
 
 The parameters are as follows:
 - `markdown`:
-	The [CommonMark](https://spec.commonmark.org/0.30/) Markdown string to be processed.
-	Parsed with the [pulldown-cmark](https://docs.rs/pulldown-cmark) Rust library.
-	You can set this to `read("somefile.md")` to import an external markdown file;
-	see the
-	[documentation for the read function](https://typst.app/docs/reference/data-loading/read/).
-	- Accepted values: Strings and raw text code blocks.
-	- Required.
+  The [CommonMark](https://spec.commonmark.org/0.30/) Markdown string to be processed.
+  Parsed with the [pulldown-cmark](https://docs.rs/pulldown-cmark) Rust library.
+  You can set this to `read("somefile.md")` to import an external markdown file;
+  see the
+  [documentation for the read function](https://typst.app/docs/reference/data-loading/read/).
+  - Accepted values: Strings and raw text code blocks.
+  - Required.
 
 - `smart-punctuation`:
-	Automatically convert ASCII punctuation to Unicode equivalents:
-	- nondirectional quotations (" and ') become directional (“” and ‘’);
-	- three consecutive full stops (...) become ellipses (…);
-	- two and three consecutive hypen-minus signs (-- and ---)
-		become en and em dashes (– and —).
+  Automatically convert ASCII punctuation to Unicode equivalents:
+  - nondirectional quotations (" and ') become directional (“” and ‘’);
+  - three consecutive full stops (...) become ellipses (…);
+  - two and three consecutive hypen-minus signs (-- and ---)
+    become en and em dashes (– and —).
 
-	Note that although Typst also offers this functionality,
-	this conversion is done through the Markdown parser rather than Typst.
-	- Accepted values: Booleans.
-	- Default value: `true`.
-
-- `blockquote`:
-	A callback to be used when a blockquote is encountered in the Markdown,
-	or `none` if blockquotes should be treated as normal text.
-	Because Typst does not support blockquotes natively,
-	the user must configure this.
-	- Accepted values: Functions accepting content and returning content, or `none`.
-	- Default value: `none`.
-
-	For example, to display a black border to the left of the text
-	one can use:
-	```typc
-	box.with(stroke: (left: 1pt + black), inset: (left: 5pt, y: 6pt))
-	```
-	<!--raw-typst
-	#(box.with(stroke: (left: 1pt + black), inset: (left: 5pt, y: 6pt)))[which displays like this.]
-	-->
-
-- `math`:
-	A callback to be used when equations are encountered in the Markdown,
-	or `none` if it should be treated as normal text.
-	Because Typst does not support LaTeX equations natively,
-	the user must configure this.
-	- Accepted values:
-		Functions that take a boolean argument named `block` and a positional string argument
-		(often, the `mitex` function from
-		[the mitex package](https://typst.app/universe/package/mitex)),
-		or `none`.
-	- Default value: `none`.
-
-	For example, to render math equation as a Typst math block,
-	one can use:
-	```typc
-	#import "@preview/mitex:0.2.4": mitex
-	#cmarker.render(`$\int_1^2 x \mathrm{d} x$`, math: mitex)
-	```
-	<!--raw-typst
-	which renders as: $integral_1^2 x dif x$
-	-->
-
-- `h1-level`:
-	The level that top-level headings in Markdown should get in Typst.
-	When set to zero,
-	top-level headings are treated as text,
-	`##` headings become `=` headings,
-	`###` headings become `==` headings,
-	et cetera;
-	when set to `2`,
-	`#` headings become `==` headings,
-	`##` headings become `===` headings,
-	et cetera.
-	- Accepted values: Integers in the range [0, 255].
-	- Default value: 1.
-
-- `raw-typst`:
-	Whether to allow raw Typst code to be injected into the document via HTML comments.
-	If disabled, the comments will act as regular HTML comments.
-	- Accepted values: Booleans.
-	- Default value: `true`.
-
-	For example, when this is enabled, `<!--raw-typst #circle(radius: 10pt) -->`
-	will result in a circle in the document
-	(but only when rendered through Typst).
-	See also `<!--typst-begin-exclude-->` and `<!--typst-end-exclude-->`,
-	which is the inverse of this.
-
-- `table`:
-  Whether to convert markdown table to typst tables.
-  If disabled, the markdown table will be ignored.
-  - Accepted values: Booleans,
+  Note that although Typst also offers this functionality,
+  this conversion is done through the Markdown parser rather than Typst.
+  - Accepted values: Booleans.
   - Default value: `true`.
 
+- `blockquote`:
+  A callback to be used when a blockquote is encountered in the Markdown,
+  or `none` if blockquotes should be treated as normal text.
+  Because Typst does not support blockquotes natively,
+  the user must configure this.
+  - Accepted values: Functions accepting content and returning content, or `none`.
+  - Default value: `none`.
+
+  For example, to display a black border to the left of the text
+  one can use:
+  ```typc
+  box.with(stroke: (left: 1pt + black), inset: (left: 5pt, y: 6pt))
+  ```
+  <!--raw-typst
+  #(box.with(stroke: (left: 1pt + black), inset: (left: 5pt, y: 6pt)))[which displays like this.]
+  -->
+
+- `math`:
+  A callback to be used when equations are encountered in the Markdown,
+  or `none` if it should be treated as normal text.
+  Because Typst does not support LaTeX equations natively,
+  the user must configure this.
+  - Accepted values:
+    Functions that take a boolean argument named `block` and a positional string argument
+    (often, the `mitex` function from
+    [the mitex package](https://typst.app/universe/package/mitex)),
+    or `none`.
+  - Default value: `none`.
+
+  For example, to render math equation as a Typst math block,
+  one can use:
+  ```typc
+  #import "@preview/mitex:0.2.4": mitex
+  #cmarker.render(`$\int_1^2 x \mathrm{d} x$`, math: mitex)
+  ```
+  <!--raw-typst
+  which renders as: $integral_1^2 x dif x$
+  -->
+
+- `h1-level`:
+  The level that top-level headings in Markdown should get in Typst.
+  When set to zero,
+  top-level headings are treated as text,
+  `##` headings become `=` headings,
+  `###` headings become `==` headings,
+  et cetera;
+  when set to `2`,
+  `#` headings become `==` headings,
+  `##` headings become `===` headings,
+  et cetera.
+  - Accepted values: Integers in the range [0, 255].
+  - Default value: 1.
+
+- `raw-typst`:
+  Whether to allow raw Typst code to be injected into the document via HTML comments.
+  If disabled, the comments will act as regular HTML comments.
+  - Accepted values: Booleans.
+  - Default value: `true`.
+
+  For example, when this is enabled, `<!--raw-typst #circle(radius: 10pt) -->`
+  will result in a circle in the document
+  (but only when rendered through Typst).
+  See also `<!--typst-begin-exclude-->` and `<!--typst-end-exclude-->`,
+  which is the inverse of this.
+
 - `scope`:
-	When `raw-typst` is enabled,
-	this is a dictionary
-	providing the context in which the evaluated Typst code runs.
-	It is useful to pass values in to code inside `<!--raw-typst-->` blocks.
-	- Accepted values: Any dictionary.
-	- Default value: `(:)`.
+  When `raw-typst` is enabled,
+  this is a dictionary
+  providing the context in which the evaluated Typst code runs.
+  It is useful to pass values in to code inside `<!--raw-typst-->` blocks.
+  - Accepted values: Any dictionary.
+  - Default value: `(:)`.
 
 - `show-source`:
-	A debugging tool.
-	When set to `true`, the Typst code that would otherwise have been displayed
-	will be instead rendered in a code block.
-	- Accepted values: Booleans.
-	- Default value: `false`.
+  A debugging tool.
+  When set to `true`, the Typst code that would otherwise have been displayed
+  will be instead rendered in a code block.
+  - Accepted values: Booleans.
+  - Default value: `false`.
 
 This function returns the rendered `content`.
 
@@ -216,51 +209,51 @@ We support CommonMark with a couple extensions.
 
 - Paragraph breaks: Two newlines, i.e. one blank line.
 - Hard line breaks (used more in poetry than prose):
-	Put two spaces at the end of the line.
+  Put two spaces at the end of the line.
 - `*emphasis*` or `_emphasis_`: *emphasis*
 - `**strong**` or `__strong__`: **strong**
 - `~strikethrough~`: ~strikethrough~
 - `[links](https://example.org)`: [links](https://example.org/)
 - `### Headings`, where `#` is a top-level heading,
-	`##` a subheading, `###` a sub-subheading, etc
+  `##` a subheading, `###` a sub-subheading, etc
 - `` `inline code blocks` ``: `inline code blocks`
 -
-	````
-	```
-	out of line code blocks
-	```
-	````
-	Syntax highlighting can be achieved by specifying a language after the opening backticks:
-	````
-	```rust
-	let x = 5;
-	```
-	````
-	giving:
-	```rust
-	let x = 5;
-	```
+  ````
+  ```
+  out of line code blocks
+  ```
+  ````
+  Syntax highlighting can be achieved by specifying a language after the opening backticks:
+  ````
+  ```rust
+  let x = 5;
+  ```
+  ````
+  giving:
+  ```rust
+  let x = 5;
+  ```
 - `---`, making a horizontal rule:
 
 ---
 -
-	```md
-	- Unordered
-	- lists
-	```
-	- Unordered
-	- Lists
+  ```md
+  - Unordered
+  - lists
+  ```
+  - Unordered
+  - Lists
 -
-	```md
-	1. Ordered
-	1. Lists
-	```
-	1. Ordered
-	1. Lists
+  ```md
+  1. Ordered
+  1. Lists
+  ```
+  1. Ordered
+  1. Lists
 - `$x + y$` or `$$x + y$$`: math equations, if the `math` parameter is set.
 - `> blockquotes`, if the `blockquote` parameter is set.
 - Images: `![Some tiled hexagons](examples/hexagons.png)`, giving
-	![Some tiled hexagons](examples/hexagons.png)
+  ![Some tiled hexagons](examples/hexagons.png)
 - Tables:
   | Column 1| Column 2|
   |---------|---------|
@@ -362,20 +355,20 @@ Regular Markdown goes here…
 ## Limitations
 
 - We do not currently support HTML tags, and they will be stripped from the output;
-	for example, GitHub supports writing `<sub>text</sub>` to get subscript text,
-	but we will render that as simply “text”.
-	In future it would be nice to support a subset of HTML tags.
+  for example, GitHub supports writing `<sub>text</sub>` to get subscript text,
+  but we will render that as simply “text”.
+  In future it would be nice to support a subset of HTML tags.
 - We do not currently support Markdown tables and footnotes.
-	In future it would be good to.
+  In future it would be good to.
 - Although I tried my best to escape everything correctly,
-	I won’t provide a hard guarantee that everything is fully sandboxed
-	even if you set `raw-typst: false`.
-	That said, Typst itself is well-sandboxed anyway.
+  I won’t provide a hard guarantee that everything is fully sandboxed
+  even if you set `raw-typst: false`.
+  That said, Typst itself is well-sandboxed anyway.
 
 ## Development
 
 - Build the plugin with `./build.sh`,
-	which produces the `plugin.wasm` necessary to use this.
+  which produces the `plugin.wasm` necessary to use this.
 - Compile examples with `typst compile examples/{name}.typ --root .`.
 - Compile this README to PDF with `typst compile README.md`.
 

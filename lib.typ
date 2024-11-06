@@ -6,7 +6,6 @@
   math: none,
   h1-level: 1,
   raw-typst: true,
-  table: true,
   scope: (:),
   show-source: false,
 ) = {
@@ -23,9 +22,6 @@
   }
   if raw-typst {
     options += 0b00000100
-  }
-  if table {
-    options += 0b00010000
   }
   if math != none {
     options += 0b00001000
