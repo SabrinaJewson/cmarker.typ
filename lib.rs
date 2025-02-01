@@ -135,8 +135,11 @@ fn inner(markdown: &str, options: Options, h1_level: u8) -> Result<Vec<u8>, Stri
             Start(Tag::TableCell) => result.extend_from_slice(b"["),
             End(TagEnd::TableCell) => result.extend_from_slice(b"],"),
 
-            Start(Tag::Emphasis) | End(TagEnd::Emphasis) => result.push(b'_'),
-            Start(Tag::Strong) | End(TagEnd::Strong) => result.push(b'*'),
+            Start(Tag::Emphasis) => result.extend_from_slice(b"#emph["),
+            End(TagEnd::Emphasis) => result.push(b']'),
+
+            Start(Tag::Strong) => result.extend_from_slice(b"#strong["),
+            End(TagEnd::Strong) => result.push(b']'),
 
             Start(Tag::Link {
                 link_type: _,
@@ -302,7 +305,6 @@ fn escape_text(text: &[u8], result: &mut Vec<u8>) {
 
 #[cfg(test)]
 mod tests {
-
     #[test]
     fn heading() {
         assert_eq!(with_h1_level("# H", 0), "\n H\n");
@@ -328,8 +330,8 @@ mod tests {
 
     #[test]
     fn styling() {
-        assert_eq!(render_("*i* _i_"), "_i_ _i_\n\n");
-        assert_eq!(render_("**b** __b__"), "*b* *b*\n\n");
+        assert_eq!(render_("*i* _i_"), "#emph[i] #emph[i]\n\n");
+        assert_eq!(render_("**b** __b__"), "#strong[b] #strong[b]\n\n");
         assert_eq!(render_("~s~"), "#strike[s]\n\n");
     }
 
@@ -403,8 +405,8 @@ mod tests {
 
     #[test]
     fn blockquote() {
-        assert_eq!(with_blockquote("> *q*"), "#blockquote[_q_\n\n]\n\n");
-        assert_eq!(render_("> *Quoted*"), "_Quoted_\n\n");
+        assert_eq!(with_blockquote("> *q*"), "#blockquote[#emph[q]\n\n]\n\n");
+        assert_eq!(render_("> *Quoted*"), "#emph[Quoted]\n\n");
         assert_eq!(
             with_blockquote("> Quoted\n> > Nested"),
             "#blockquote[Quoted\n\n#blockquote[Nested\n\n]\n\n]\n\n"

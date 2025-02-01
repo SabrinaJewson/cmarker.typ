@@ -10,6 +10,8 @@ This document contains a bunch of tests that should be manually checked.
 
 Basic styling: *italics*, _italics_, **bold**, __bold__, ~strikethrough~
 
+Fix for issue #15: not bold **bold**not bold
+
 Unlike Typst, bare links are not clickable: https://example.org.  
 Angle-bracket links are clickable: <https://example.org>.  
 We can also use links with text: [example.org](https://example.org).  
