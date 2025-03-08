@@ -108,3 +108,33 @@ Images:
 Footnotes 1, 2, 1: [^before] [^after] [^before]
 
 [^after]: abc **bold text**
+
+## HTML tests
+
+<sup>superscript</sup>,
+<sub>subscript</sub>,
+<em>Italics</em>,
+<strong>bold</strong>,
+<s>strikethrough</s>,
+<mark>highlighted</mark>,
+<a href="#before">link to the footnote</a>,
+<a href="https://example.org/">link to example.org</a>
+
+<h1>h1</h1>
+<h2>h2</h2>
+<h3>h3</h3>
+<h4>h4</h4>
+<h5>h5</h5>
+<h6>h6</h6>
+
+Below is a `<hr>`:
+
+<hr>
+
+
+A paragraph<br>
+with a `<br>`.
+
+Image with no alt text: <img src="hexagons.png">
+
+Image with alt text: <img src="hexagons.png" alt="hexagons">

@@ -10,4 +10,9 @@
 #align(center, text(weight: 700, 1.75em)[cmarker.typ])
 #align(center)[https://github.com/SabrinaJewson/cmarker.typ]
 
-#cmarker.render(read("README.md"), h1-level: 0, smart-punctuation: false)
+#cmarker.render(
+  read("README.md"),
+  h1-level: 0,
+  smart-punctuation: false,
+  raw-typst: true,
+)

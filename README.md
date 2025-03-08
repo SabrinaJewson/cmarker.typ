@@ -73,6 +73,7 @@ render(
   math: none,
   h1-level: 1,
   raw-typst: true,
+	html: (:),
   scope: (:),
   show-source: false,
 ) -> content
@@ -164,6 +165,40 @@ The parameters are as follows:
 	(but only when rendered through Typst).
 	See also `<!--typst-begin-exclude-->` and `<!--typst-end-exclude-->`,
 	which is the inverse of this.
+
+- `html`:
+	The list of HTML elements that cmarker will support.
+	Even if you provide an empty dictionary,
+	the following elements will be supported by default:
+	`<sub>`,
+	`<sup>`,
+	`<mark>`,
+	`<h1>`–`<h6>`,
+	`<hr>`,
+	`<a>`,
+	`<em>`,
+	`<strong>`,
+	`<s>`,
+	`<br>`,
+	`<img>`.
+	You can override these if you want.
+	- Accepted values:
+		Dictionaries whose values can be:
+		- `("normal", (attrs, body) => [/* … */])`:
+			Defines a normal element,
+			where `attrs` is a dictionary of strings, `body` is content,
+			and the function returns content.
+		- `("void", (attrs) => [/* … */])`:
+			Defines a void element (e.g. `<br>`, `<img>`, `<hr>`).
+		- `("raw-text", (attrs, body) => [/* … */])`:
+			Defines a raw text element (e.g. `<script>`, `<style>`),
+			where `body` is a string.
+		- `("escapable-raw-text", (attrs, body) => [/* … */])`:
+			Defines an escapable raw text element (e.g. `<textarea>`),
+			where `body` is a string.
+		- `(attrs, body) => [/* … */]`: Shorthand for
+			`("normal", (attrs, body) => [/* … */])`.
+	- Default value: `(:)`.
 
 - `scope`:
 	When `raw-typst` is enabled,
@@ -264,6 +299,7 @@ We support CommonMark with a couple extensions.
 | -------- | -------- |
 | Row 1 Cell 1 | Row 1 Cell 2 |
 | Row 2 Cell 1 | Row 2 Cell 2 |
+- HTML, e.g. `<sub>subscript</sub>` for <sub>subscript</sub>.
 
 ## Interleaving Markdown and Typst
 
@@ -315,22 +351,14 @@ otherwise it will just be seen as a regular comment and removed):
 
 ## Limitations
 
-- We do not currently support HTML tags, and they will be stripped from the output;
-	for example, GitHub supports writing `<sub>text</sub>` to get subscript text,
-	but we will render that as simply “text”.
-	In future it would be nice to support a subset of HTML tags.
-- We do not currently support Markdown footnotes.
-	In future it would be good to.
-- Although I tried my best to escape everything correctly,
-	I won’t provide a hard guarantee that everything is fully sandboxed
-	even if you set `raw-typst: false`.
-	That said, Typst itself is well-sandboxed anyway.
+Although I tried my best to escape everything correctly,
+I won’t provide a hard guarantee that everything is fully sandboxed
+even if you set `raw-typst: false`.
+That said, Typst itself is well-sandboxed anyway.
 
 ## Development
 
 - Build the plugin with `./build.sh`,
 	which produces the `plugin.wasm` necessary to use this.
 - Compile examples with `typst compile examples/{name}.typ --root .`.
-- Compile this README to PDF with `typst compile README.md`.
-
-<!--*///-->
+- Compile this README to PDF with `typst compile README.typ`.

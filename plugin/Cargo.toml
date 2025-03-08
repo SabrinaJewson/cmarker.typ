@@ -1,0 +1,18 @@
+[package]
+name = "plugin"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[lib]
+path = "lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+bitflags = "2.4.1"
+itoa = "1.0.9"
+memchr = "2.6.4"
+pulldown-cmark = { version = "0.12.1", default-features = false }
+phf = "0.11.3"
+wasm-minimal-protocol.git = "https://github.com/astrale-sharp/wasm-minimal-protocol"
+wasm-minimal-protocol.rev = "637508c184c7bfad7caadf109e2fa3871d99c57e"
