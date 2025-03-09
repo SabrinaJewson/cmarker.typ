@@ -73,7 +73,7 @@ render(
   math: none,
   h1-level: 1,
   raw-typst: true,
-	html: (:),
+  html: (:),
   scope: (:),
   show-source: false,
 ) -> content

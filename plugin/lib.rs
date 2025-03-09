@@ -80,13 +80,12 @@ fn inner(
     let mut parser = Unpeekable::new(pulldown_cmark::Parser::new_ext(markdown, markdown_options));
     while let (Some(event), _) = parser.next() {
         use pulldown_cmark::CodeBlockKind;
-        use pulldown_cmark::Event::*;
-        use pulldown_cmark::{Tag, TagEnd};
+        use pulldown_cmark::{Event as E, Tag, TagEnd};
         match event {
-            Start(Tag::Paragraph) => {}
-            End(TagEnd::Paragraph) => result.extend_from_slice(b"\n\n"),
+            E::Start(Tag::Paragraph) => {}
+            E::End(TagEnd::Paragraph) => result.extend_from_slice(b"\n\n"),
 
-            Start(Tag::Heading {
+            E::Start(Tag::Heading {
                 level,
                 id: _,
                 classes: _,
@@ -97,30 +96,30 @@ fn inner(
                 result.resize(result.len() + equal_signs, b'=');
                 result.push(b' ');
             }
-            End(TagEnd::Heading(_)) => result.extend_from_slice(b"\n"),
+            E::End(TagEnd::Heading(_)) => result.extend_from_slice(b"\n"),
 
-            Start(Tag::BlockQuote(_)) => {
+            E::Start(Tag::BlockQuote(_)) => {
                 if options.contains(Options::BLOCKQUOTE) {
                     result.extend_from_slice(b"#blockquote");
                     start_scope(&mut open_tags, &mut result);
                 }
             }
-            End(TagEnd::BlockQuote(_)) => {
+            E::End(TagEnd::BlockQuote(_)) => {
                 if options.contains(Options::BLOCKQUOTE) {
                     end_scope(&mut open_tags, &mut result);
                     result.extend_from_slice(b"\n\n");
                 }
             }
 
-            Start(Tag::Strikethrough) => {
+            E::Start(Tag::Strikethrough) => {
                 result.extend_from_slice(b"#strike");
                 start_scope(&mut open_tags, &mut result);
             }
-            End(TagEnd::Strikethrough) => {
+            E::End(TagEnd::Strikethrough) => {
                 end_scope(&mut open_tags, &mut result);
             }
 
-            Start(Tag::CodeBlock(kind)) => {
+            E::Start(Tag::CodeBlock(kind)) => {
                 result.extend_from_slice(b"#raw(block:true,");
                 if let CodeBlockKind::Fenced(lang) = kind {
                     if !lang.is_empty() {
@@ -132,16 +131,16 @@ fn inner(
                 result.push(b'"');
                 loop {
                     match parser.next().0.unwrap() {
-                        Text(text) => escape_string(text.as_bytes(), &mut result),
-                        End(TagEnd::CodeBlock) => break,
+                        E::Text(text) => escape_string(text.as_bytes(), &mut result),
+                        E::End(TagEnd::CodeBlock) => break,
                         other => return Err(format!("unexpected {other:?} in code block")),
                     }
                 }
                 result.extend_from_slice(b"\")\n");
             }
-            End(TagEnd::CodeBlock) => unreachable!(),
+            E::End(TagEnd::CodeBlock) => unreachable!(),
 
-            Start(Tag::List(first)) => {
+            E::Start(Tag::List(first)) => {
                 if let Some(first) = first {
                     result.extend_from_slice(b"#enum(start:");
                     result.extend_from_slice(itoa::Buffer::new().format(first).as_bytes());
@@ -150,14 +149,14 @@ fn inner(
                     result.extend_from_slice(b"#list(");
                 }
             }
-            End(TagEnd::List(_)) => result.extend_from_slice(b")\n"),
-            Start(Tag::Item) => start_scope(&mut open_tags, &mut result),
-            End(TagEnd::Item) => {
+            E::End(TagEnd::List(_)) => result.extend_from_slice(b")\n"),
+            E::Start(Tag::Item) => start_scope(&mut open_tags, &mut result),
+            E::End(TagEnd::Item) => {
                 end_scope(&mut open_tags, &mut result);
                 result.extend_from_slice(b",");
             }
 
-            Start(Tag::Table(alignments)) => {
+            E::Start(Tag::Table(alignments)) => {
                 result.extend_from_slice(b"#table(align:(");
                 for align in &alignments {
                     result.extend_from_slice(match align {
@@ -172,32 +171,32 @@ fn inner(
                 result.extend_from_slice(columns.format(alignments.len()).as_bytes());
                 result.extend_from_slice(b",");
             }
-            End(TagEnd::Table) => result.extend_from_slice(b")"),
-            Start(Tag::TableHead) => result.extend_from_slice(b"table.header("),
-            End(TagEnd::TableHead) => result.extend_from_slice(b"),"),
+            E::End(TagEnd::Table) => result.extend_from_slice(b")"),
+            E::Start(Tag::TableHead) => result.extend_from_slice(b"table.header("),
+            E::End(TagEnd::TableHead) => result.extend_from_slice(b"),"),
 
-            Start(Tag::TableRow) => {}
-            End(TagEnd::TableRow) => {}
+            E::Start(Tag::TableRow) => {}
+            E::End(TagEnd::TableRow) => {}
 
-            Start(Tag::TableCell) => start_scope(&mut open_tags, &mut result),
-            End(TagEnd::TableCell) => {
+            E::Start(Tag::TableCell) => start_scope(&mut open_tags, &mut result),
+            E::End(TagEnd::TableCell) => {
                 end_scope(&mut open_tags, &mut result);
                 result.extend_from_slice(b",");
             }
 
-            Start(Tag::Emphasis) => {
+            E::Start(Tag::Emphasis) => {
                 result.extend_from_slice(b"#emph");
                 start_scope(&mut open_tags, &mut result);
             }
-            End(TagEnd::Emphasis) => end_scope(&mut open_tags, &mut result),
+            E::End(TagEnd::Emphasis) => end_scope(&mut open_tags, &mut result),
 
-            Start(Tag::Strong) => {
+            E::Start(Tag::Strong) => {
                 result.extend_from_slice(b"#strong");
                 start_scope(&mut open_tags, &mut result)
             }
-            End(TagEnd::Strong) => end_scope(&mut open_tags, &mut result),
+            E::End(TagEnd::Strong) => end_scope(&mut open_tags, &mut result),
 
-            Start(Tag::Link {
+            E::Start(Tag::Link {
                 link_type: _,
                 dest_url,
                 title: _,
@@ -208,9 +207,9 @@ fn inner(
                 result.extend_from_slice(b"\")");
                 start_scope(&mut open_tags, &mut result);
             }
-            End(TagEnd::Link) => end_scope(&mut open_tags, &mut result),
+            E::End(TagEnd::Link) => end_scope(&mut open_tags, &mut result),
 
-            Start(Tag::Image {
+            E::Start(Tag::Image {
                 link_type: _,
                 dest_url,
                 title: _,
@@ -221,16 +220,16 @@ fn inner(
                 result.extend_from_slice(b"\",alt:\"");
                 loop {
                     match parser.next().0.unwrap() {
-                        Text(text) => escape_string(text.as_bytes(), &mut result),
-                        End(TagEnd::Image) => break,
+                        E::Text(text) => escape_string(text.as_bytes(), &mut result),
+                        E::End(TagEnd::Image) => break,
                         other => return Err(format!("unexpected {other:?} in image alt text")),
                     }
                 }
                 result.extend_from_slice(b"\")");
             }
-            End(TagEnd::Image) => unreachable!(),
+            E::End(TagEnd::Image) => unreachable!(),
 
-            Start(Tag::FootnoteDefinition(label)) => {
+            E::Start(Tag::FootnoteDefinition(label)) => {
                 // Because Typst displays footnotes inline while Markdown gives them out-of-line,
                 // we use `#show super:s=>none` to make the footnote that would be generated by
                 // Typst disappear.
@@ -239,36 +238,36 @@ fn inner(
                 result.extend_from_slice(b"\";#footnote");
                 start_scope(&mut open_tags, &mut result);
             }
-            End(TagEnd::FootnoteDefinition) => {
+            E::End(TagEnd::FootnoteDefinition) => {
                 end_scope(&mut open_tags, &mut result);
                 result.extend_from_slice(b"#label(l)]");
             }
 
-            Start(
+            E::Start(
                 Tag::DefinitionList
                 | Tag::DefinitionListDefinition
                 | Tag::DefinitionListTitle
                 | Tag::MetadataBlock(_),
             ) => todo!(),
 
-            End(
+            E::End(
                 TagEnd::DefinitionList
                 | TagEnd::DefinitionListDefinition
                 | TagEnd::DefinitionListTitle
                 | TagEnd::MetadataBlock(_),
             ) => todo!(),
 
-            Start(Tag::HtmlBlock) | End(TagEnd::HtmlBlock) => {}
+            E::Start(Tag::HtmlBlock) | E::End(TagEnd::HtmlBlock) => {}
 
-            Text(text) => escape_text(text.as_bytes(), &mut result),
+            E::Text(text) => escape_text(text.as_bytes(), &mut result),
 
-            Code(code) => {
+            E::Code(code) => {
                 result.extend_from_slice(b"#raw(block:false,\"");
                 escape_string(code.as_bytes(), &mut result);
                 result.extend_from_slice(b"\")");
             }
 
-            Html(s) | InlineHtml(s) => {
+            E::Html(s) | E::InlineHtml(s) => {
                 farm.clear();
                 let mut cx = HtmlContext {
                     farm: &farm,
@@ -282,32 +281,32 @@ fn inner(
                 parse_html(&mut cx);
             }
 
-            InlineMath(s) => {
+            E::InlineMath(s) => {
                 // We use #inlinemath(`…`) for inline math
                 result.extend_from_slice(b"#inlinemath(\"");
                 escape_string(s.as_bytes(), &mut result);
                 result.extend_from_slice(b"\")");
             }
 
-            DisplayMath(s) => {
+            E::DisplayMath(s) => {
                 // We use #displaymath(`…`) for display math
                 result.extend_from_slice(b"#displaymath(\"");
                 escape_string(s.as_bytes(), &mut result);
                 result.extend_from_slice(b"\")");
             }
 
-            SoftBreak => result.push(b' '),
-            HardBreak => result.extend_from_slice(b"\\ "),
+            E::SoftBreak => result.push(b' '),
+            E::HardBreak => result.extend_from_slice(b"\\ "),
 
-            Rule => result.extend_from_slice(b"#line(length:100%)\n"),
+            E::Rule => result.extend_from_slice(b"#line(length:100%)\n"),
 
-            FootnoteReference(label) => {
+            E::FootnoteReference(label) => {
                 result.extend_from_slice(b"#ref(label(\"");
                 escape_string(label.as_bytes(), &mut result);
                 result.extend_from_slice(b"\"))");
             }
 
-            TaskListMarker(_) => unreachable!(),
+            E::TaskListMarker(_) => unreachable!(),
         }
     }
 
