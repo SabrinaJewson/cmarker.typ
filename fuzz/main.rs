@@ -14,6 +14,11 @@ static HTML_TAGS: LazyLock<HtmlTags<'static>> = LazyLock::new(|| {
 });
 
 fuzz_target!(|markdown: &str| {
+    // Prevent stack overflows from nested blockquotes. We can’t reasonably support this anyway.
+    if 2000 < markdown.bytes().filter(|&b| b == b'>').count() {
+        return;
+    }
+
     let options = Options::SMART_PUNCTUATION | Options::BLOCKQUOTE | Options::MATH;
     let text = cmarker_typst::run(markdown, &HTML_TAGS, options, 1).unwrap();
     let text = String::from_utf8(text).unwrap();
