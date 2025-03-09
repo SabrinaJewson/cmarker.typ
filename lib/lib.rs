@@ -207,11 +207,16 @@ pub fn run(
                 result.extend_from_slice(b"#image(\"");
                 escape_string(dest_url.as_bytes(), &mut result);
                 result.extend_from_slice(b"\",alt:\"");
-                loop {
+                let mut layers = 1_u32;
+                while layers != 0 {
                     match parser.next().0.unwrap() {
-                        E::Text(text) => escape_string(text.as_bytes(), &mut result),
-                        E::End(TagEnd::Image) => break,
-                        other => return Err(format!("unexpected {other:?} in image alt text")),
+                        E::Text(s) | E::InlineHtml(s) | E::Code(s) => {
+                            escape_string(s.as_bytes(), &mut result)
+                        }
+                        E::SoftBreak | E::HardBreak => result.push(b' '),
+                        E::Start(Tag::Image { .. }) => layers += 1,
+                        E::End(TagEnd::Image) => layers -= 1,
+                        _ => {}
                     }
                 }
                 result.extend_from_slice(b"\");");
@@ -520,7 +525,7 @@ fn html_comment(cx: &mut HtmlContext<'_, '_>) -> Option<()> {
                 E::Start(Tag::HtmlBlock | Tag::Paragraph)
                 | E::End(TagEnd::HtmlBlock | TagEnd::Paragraph) => {}
                 E::Start(_) => {
-                    let mut layers = 1;
+                    let mut layers = 1_u32;
                     while layers != 0 {
                         match cx.parser.next().0.unwrap() {
                             E::Start(_) => layers += 1,
@@ -897,6 +902,10 @@ mod tests {
             render_("![alt text](https://example.org/)"),
             "#image(\"https://example.org/\",alt:\"alt text\");\n\n",
         );
+        assert_eq!(
+            render_("![a![*b*]()`c`<p>  \nd\ne]()\n"),
+            "#image(\"\",alt:\"abc<p> d e\");\n\n"
+        );
     }
 
     #[test]
@@ -1170,11 +1179,6 @@ mod tests {
             "[f],[g],[h],);",
         );
         assert_eq!(render_(missing_cell_md), missing_cell_typst);
-    }
-
-    #[test]
-    fn f() {
-        render_("!!!!!!!![[!!!!!!!![[!!!!!!!!!](_)!!!!!!!](_)!!");
     }
 
     #[test]
