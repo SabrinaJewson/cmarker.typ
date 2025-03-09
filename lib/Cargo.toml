@@ -1,0 +1,20 @@
+[package]
+name = "cmarker-typst"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[lib]
+path = "lib.rs"
+
+[dependencies]
+bitflags = "2.4.1"
+hashbrown = "0.15.2"
+itoa = "1.0.9"
+memchr = { version = "2.7.4", default-features = false }
+# https://github.com/pulldown-cmark/pulldown-cmark/pull/1026
+pulldown-cmark.git = "https://github.com/SabrinaJewson/pulldown-cmark.rs"
+pulldown-cmark.rev = "4203ce5bd8ef79f67357717d2b728579f3dec294"
+pulldown-cmark.default-features = false
+pulldown-cmark.features = ["hashbrown"]
+phf = { version = "0.11.3", default-features = false }

@@ -27,6 +27,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "cmarker-typst"
+version = "0.0.0"
+dependencies = [
+ "bitflags",
+ "hashbrown",
+ "itoa",
+ "memchr",
+ "phf",
+ "pulldown-cmark",
+]
+
+[[package]]
 name = "crossbeam-deque"
 version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -175,13 +187,8 @@ source = "git+https://github.com/conradludgate/rust-phf?rev=b6bba7216937ad4808c1
 name = "plugin"
 version = "0.0.0"
 dependencies = [
- "bitflags",
+ "cmarker-typst",
  "dlmalloc",
- "hashbrown",
- "itoa",
- "memchr",
- "phf",
- "pulldown-cmark",
  "wasm-minimal-protocol",
 ]
 

@@ -1,5 +1,5 @@
 [workspace]
-members = ["plugin", "plugin/generate-entities", "test-runner"]
+members = [ "lib","plugin", "plugin/generate-entities", "test-runner"]
 resolver = "3"
 
 [profile.release]
