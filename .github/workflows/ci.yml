@@ -3,7 +3,6 @@
     "name": "CI",
     "jobs": {
         "clippy": {
-            "name": "Clippy",
             "runs-on": "ubuntu-latest",
             "steps": [
                 { "uses": "actions/checkout@v4" },
@@ -12,17 +11,23 @@
             ],
         },
         "test": {
-            "name": "Test",
+            "runs-on": "ubuntu-latest",
+            "steps": [
+                { "uses": "actions/checkout@v4" },
+                { "uses": "dtolnay/rust-toolchain@stable" },
+                { "run": "cargo test --workspace --all-targets" },
+            ],
+        },
+        "html-tests": {
             "runs-on": "ubuntu-latest",
             "steps": [
                 { "uses": "actions/checkout@v4" },
                 { "uses": "dtolnay/rust-toolchain@stable", "with": { "targets": "wasm32v1-none" } },
-                { "run": "cargo test --workspace --all-targets" },
+                { "uses": "typst-community/setup-typst@v4", "with": { "typst-version": "0.13.1" } },
                 { "run": "cargo run -p test-runner" },
             ],
         },
         "fmt": {
-            "name": "Rustfmt",
             "runs-on": "ubuntu-latest",
             "steps": [
                 { "uses": "actions/checkout@v4" },
