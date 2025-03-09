@@ -1173,11 +1173,15 @@ mod tests {
     }
 
     #[test]
+    fn f() {
+        render_("!!!!!!!![[!!!!!!!![[!!!!!!!!!](_)!!!!!!!](_)!!");
+    }
+
+    #[test]
     fn readme() {
         let readme = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../README.md"));
         with_raw_typst(readme);
     }
-
 
     fn with_h1_level(s: &str, h1_level: u8) -> String {
         render(s, &HashMap::new(), Options::empty(), h1_level)
