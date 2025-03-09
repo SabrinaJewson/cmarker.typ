@@ -6,7 +6,6 @@
 This package enables you to write CommonMark Markdown,
 and import it directly into Typst.
 
-<!--typst-begin-exclude-->
 <table>
 <tr>
 <th><code>simple.typ</code></th>
@@ -35,26 +34,6 @@ and import it directly into Typst.
 <tr><th><code>simple.pdf</code></th></tr>
 <tr><td><img src="./examples/simple.png"></td></tr>
 </table>
-<!--typst-end-exclude-->
-
-<!--raw-typst
-#table(
-	columns: (1.2fr, 1fr),
-	[`simple.typ`],
-	[`simple.md`],
-	[```typst
-#import "@preview/cmarker:0.1.2"
-
-#cmarker.render(read("simple.md"))
-	```],
-	[```markdown
-# We can write Markdown!
-
-*Using* __lots__ ~of~ `fancy` [features](https://example.org/).
-	```],
-)
-#table(columns: (100%), [`simple.pdf`], image("./examples/simple.png", height: auto))
--->
 
 This document is available
 in [Markdown](https://github.com/SabrinaJewson/cmarker.typ/tree/main#cmarker)
@@ -174,11 +153,24 @@ The parameters are as follows:
 	`<sup>`,
 	`<mark>`,
 	`<h1>`–`<h6>`,
+	`<ul>`,
+	`<ol>`,
+	`<li>`,
+	`<dl>`,
+	`<dt>`,
+	`<dd>`,
+	`<table>`,
+	`<thead>`,
+	`<tfoot>`,
+	`<tr>`,
+	`<th>`,
+	`<td>`,
 	`<hr>`,
 	`<a>`,
 	`<em>`,
 	`<strong>`,
 	`<s>`,
+	`<code>`,
 	`<br>`,
 	`<img>`.
 	You can override these if you want.
