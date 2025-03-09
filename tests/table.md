@@ -1,3 +1,13 @@
+Markdown table:
+
+| Left-aligned column | Centred column | Right-aligned column | auto |
+| :--- | :----: | ----: | ---- |
+| 1 | 1 | 1 | 1 |
+| this row is incomplete |
+| this row has extra cells | 1 | 2 | 3 | 4 |
+
+HTML table:
+
 <table>
 	<thead>
 		<tr>
