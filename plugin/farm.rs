@@ -27,5 +27,16 @@ impl Farm {
     }
 }
 
+#[test]
+fn test() {
+    let farm = Farm::default();
+
+    let s1 = farm.add(CowStr::Boxed("hello world".into()));
+    assert_eq!(s1, "hello world");
+
+    let s2 = farm.add(CowStr::Boxed("food".into()));
+    assert_eq!(s2, "food");
+}
+
 use pulldown_cmark::CowStr;
 use std::cell::UnsafeCell;
