@@ -6,4 +6,5 @@ rustflags = [
 	"-Ctarget-feature=+multivalue",
 	"-Ctarget-feature=+reference-types",
 	"-Clto=fat",
+	"-Cembed-bitcode",
 ]
