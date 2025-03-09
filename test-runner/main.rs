@@ -43,6 +43,10 @@ fn main() -> anyhow::Result<()> {
 
 fn run_test(md_path: &Path, bless: bool) -> anyhow::Result<Result<(), String>> {
     let html_path = md_path.with_extension("html");
+    let old = match fs::exists(&html_path)? {
+        false => String::new(),
+        true => fs::read_to_string(&html_path)?,
+    };
 
     let typst_command = || {
         let mut command = process::Command::new("typst");
@@ -107,16 +111,19 @@ fn run_test(md_path: &Path, bless: bool) -> anyhow::Result<Result<(), String>> {
 
     let html = String::from_utf8(output.stdout).context("stdout not utf-8")?;
 
-    if !fs::exists(&html_path)? || bless {
-        println!("{} {}", "Writing".bold().blue(), html_path.display());
-        fs::write(&html_path, html).context("writing HTML")?;
-        return Ok(Ok(()));
-    }
-
-    let old = fs::read_to_string(&html_path).context("reading HTML")?;
-
-    if old == html {
-        println!("{} {}", "Success".green().bold(), md_path.display());
+    if old.is_empty() || bless || old == html {
+        if old != html {
+            fs::write(&html_path, &html).context("writing HTML")?;
+            if old.is_empty() {
+                println!("{} {}", "Created".bold().blue(), html_path.display());
+            } else {
+                println!("{} {}", "Updated".bold().blue(), html_path.display());
+            }
+        } else if bless {
+            println!("{} {}", "Unchanged".bold().white(), html_path.display());
+        } else {
+            println!("{} {}", "Success".green().bold(), md_path.display());
+        }
         return Ok(Ok(()));
     }
 
