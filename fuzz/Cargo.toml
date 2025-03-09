@@ -1,0 +1,20 @@
+[package]
+name = "cmarker-typst-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4.9"
+typst-syntax = "0.13.1"
+cmarker-typst = { path = "../lib" }
+
+[[bin]]
+name = "fuzz"
+path = "main.rs"
+test = false
+doc = false
+bench = false

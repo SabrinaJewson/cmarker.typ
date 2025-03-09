@@ -5,4 +5,5 @@ rustflags = [
 	"-Ctarget-feature=+bulk-memory",
 	"-Ctarget-feature=+multivalue",
 	"-Ctarget-feature=+reference-types",
+	"-Clto=fat",
 ]

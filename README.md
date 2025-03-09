@@ -355,3 +355,4 @@ That said, Typst itself is well-sandboxed anyway.
 - Compile examples with `typst compile examples/{name}.typ`.
 - Compile this README to PDF with `typst compile README.typ`.
 - Run tests with `cargo test` and `cargo run -p test-runner`.
+- Fuzz the library with `cargo +nightly fuzz run fuzz`.

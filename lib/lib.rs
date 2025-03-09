@@ -831,7 +831,7 @@ fn escape_text(text: &[u8], result: &mut Vec<u8>) {
         if let Some(prefix) = prefix {
             result.extend_from_slice(b"#(\"");
             result.extend_from_slice(prefix);
-            result.extend_from_slice(b"\")");
+            result.extend_from_slice(b"\");");
             iter.nth(prefix.len() - 2);
             continue;
         }
@@ -883,7 +883,7 @@ mod tests {
     fn links_images() {
         assert_eq!(
             render_("<https://example.org/\">"),
-            "#link(\"https://example.org/\\\"\")[#(\"https://\")example.org\\/\\\"];\n\n"
+            "#link(\"https://example.org/\\\"\")[#(\"https://\");example.org\\/\\\"];\n\n"
         );
         assert_eq!(
             render_("[a](https://example.org)"),
@@ -1178,6 +1178,7 @@ mod tests {
         with_raw_typst(readme);
     }
 
+
     fn with_h1_level(s: &str, h1_level: u8) -> String {
         render(s, &HashMap::new(), Options::empty(), h1_level)
     }
@@ -1224,8 +1225,8 @@ mod tests {
 
     #[test]
     fn text_escaping() {
-        assert_eq!(escape_text("http://"), "#(\"http://\")");
-        assert_eq!(escape_text("foohttps://bar"), "foo#(\"https://\")bar");
+        assert_eq!(escape_text("http://"), "#(\"http://\");");
+        assert_eq!(escape_text("foohttps://bar"), "foo#(\"https://\");bar");
         assert_eq!(escape_text("*"), "\\*");
         assert_eq!(escape_text("`"), "\\`");
         assert_eq!(escape_text("⟪<>⟫"), "⟪\\<\\>⟫");

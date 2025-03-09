@@ -1,9 +1,6 @@
 [workspace]
-members = [ "lib","plugin", "plugin/generate-entities", "test-runner"]
+members = [ "lib","plugin", "plugin/generate-entities", "test-runner", "fuzz"]
 resolver = "3"
-
-[profile.release]
-lto = "fat"
 
 [profile.release.package.plugin]
 strip = true
