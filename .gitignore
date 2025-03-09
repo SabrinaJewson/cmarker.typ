@@ -1,3 +1,4 @@
 /target
 /plugin/generate-entities/entities.json
 /plugin.wasm
+/lib.pdf
