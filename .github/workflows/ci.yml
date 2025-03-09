@@ -16,7 +16,7 @@
             "runs-on": "ubuntu-latest",
             "steps": [
                 { "uses": "actions/checkout@v4" },
-                { "uses": "dtolnay/rust-toolchain@stable" },
+                { "uses": "dtolnay/rust-toolchain@stable", "with": { "targets": "wasm32v1-none" } },
                 { "run": "cargo test --workspace --all-targets" },
                 { "run": "cargo run -p test-runner" },
             ],

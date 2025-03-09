@@ -10,11 +10,8 @@ fn main() -> anyhow::Result<()> {
         .context("running cargo build")?;
     anyhow::ensure!(e.success(), "cargo build failed");
 
-    fs::copy(
-        "target/wasm32v1-none/debug/plugin.wasm",
-        "plugin.wasm",
-    )
-    .context("copying plugin.wasm")?;
+    fs::copy("target/wasm32v1-none/debug/plugin.wasm", "plugin.wasm")
+        .context("copying plugin.wasm")?;
 
     let mut entries = fs::read_dir("tests")
         .context("reading tests dir")?

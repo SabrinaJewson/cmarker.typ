@@ -12,9 +12,6 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
     core::arch::wasm32::unreachable()
 }
 
-#[cfg(target_feature = "simd128")]
-compile_error!("asdf");
-
 wasm_minimal_protocol::initiate_protocol!();
 
 bitflags! {
