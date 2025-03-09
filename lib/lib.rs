@@ -337,7 +337,11 @@ fn parse_html(cx: &mut HtmlContext<'_, '_>) {
             b'<' if html_comment(cx).is_some() => {}
             b'<' => cx.result.extend_from_slice(b"\\<"),
             b'&' => match decode_character_reference_escape(&mut cx.html) {
-                Some(s) => cx.result.extend_from_slice(s.as_bytes()),
+                Some(s) => {
+                    cx.result.extend_from_slice(b"#(\"");
+                    cx.result.extend_from_slice(s.as_bytes());
+                    cx.result.extend_from_slice(b"\");");
+                }
                 None => cx.result.extend_from_slice(b"&"),
             },
             _ => unreachable!(),
@@ -1013,9 +1017,10 @@ mod tests {
     fn html_basic() {
         assert_eq!(render_("<p>\""), "\\\"");
         assert_eq!(render_("<p><"), "\\<");
-        assert_eq!(render_("<p>&amp;"), "&");
+        assert_eq!(render_("<p>&amp;"), "#(\"&\");");
         assert_eq!(render_("<p>&amp"), "&amp");
         assert_eq!(render_("<p>\\<\\"), "\\\\\\<\\\\");
+        assert_eq!(render_("<!u&#36;"), "\\<!u#(\"$\");");
     }
 
     #[test]
