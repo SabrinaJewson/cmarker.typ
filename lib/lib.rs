@@ -366,7 +366,7 @@ fn html_open_tag(cx: &mut HtmlContext<'_, '_>) -> Option<()> {
         result.inner.extend_from_slice(tag_name.0.0);
         result.inner.extend_from_slice(b")((");
     }
-    let mut has_attributes = false;
+    let mut attribute_names = HashSet::new();
 
     loop {
         rest = rest.trim_ascii_start();
@@ -406,8 +406,7 @@ fn html_open_tag(cx: &mut HtmlContext<'_, '_>) -> Option<()> {
                     _ => b"",
                 };
 
-                has_attributes = true;
-                if tag.is_some() {
+                if attribute_names.insert(attribute_name) && tag.is_some() {
                     result.inner.push(b'"');
                     escape_string(attribute_name, result.inner);
                     result.inner.extend_from_slice(b"\":\"");
@@ -431,7 +430,7 @@ fn html_open_tag(cx: &mut HtmlContext<'_, '_>) -> Option<()> {
     cx.html = rest;
 
     if let Some((&tag_name, tag_kind)) = tag {
-        if !has_attributes {
+        if attribute_names.is_empty() {
             cx.result.push(b':');
         }
         cx.result.extend_from_slice(b")");
@@ -1042,6 +1041,7 @@ mod tests {
             "#(html.b)((\":9_.:-\":\"_\",))[]"
         );
         assert_eq!(with_html("<p :`>"), "\\<p :\\`\\>");
+        assert_eq!(with_html("<b u=a u=b>"), "#(html.b)((\"u\":\"a\",))[]");
 
         // Attribute values
         assert_eq!(with_html("<b _=\\>"), "#(html.b)((\"_\":\"\\\\\",))[]");
@@ -1058,8 +1058,8 @@ mod tests {
             "#(html.b)((\"_\":\"=<>\\\\\",))[]"
         );
         assert_eq!(
-            with_html("<b _=_\t_>"),
-            "#(html.b)((\"_\":\"_\",\"_\":\"\",))[]"
+            with_html("<b _=_\t__>"),
+            "#(html.b)((\"_\":\"_\",\"__\":\"\",))[]"
         );
 
         // Void tags, raw text tags
@@ -1273,6 +1273,7 @@ use core::hash::Hasher;
 use core::mem;
 use core::str;
 use hashbrown::HashMap;
+use hashbrown::HashSet;
 use memchr::memchr;
 use memchr::memchr2;
 use memchr::memmem;
