@@ -1,4 +1,19 @@
+#![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::items_after_test_module)]
+
+extern crate alloc;
+
+#[global_allocator]
+static ALLOC: GlobalDlmalloc = GlobalDlmalloc;
+
+#[panic_handler]
+#[cfg(target_arch = "wasm32")]
+fn panic(_info: &core::panic::PanicInfo) -> ! {
+    core::arch::wasm32::unreachable()
+}
+
+#[cfg(target_feature = "simd128")]
+compile_error!("asdf");
 
 wasm_minimal_protocol::initiate_protocol!();
 
@@ -71,7 +86,7 @@ fn inner(
     };
     let end_scope = |open_tags: &mut Vec<Vec<CaseInsensitive<&[u8]>>>, result: &mut Vec<u8>| {
         for _ in open_tags.pop().unwrap() {
-            result.extend_from_slice(b"]");
+            result.extend_from_slice(b"];");
         }
         result.extend_from_slice(b"]");
     };
@@ -117,6 +132,7 @@ fn inner(
             }
             E::End(TagEnd::Strikethrough) => {
                 end_scope(&mut open_tags, &mut result);
+                result.push(b';');
             }
 
             E::Start(Tag::CodeBlock(kind)) => {
@@ -171,7 +187,7 @@ fn inner(
                 result.extend_from_slice(columns.format(alignments.len()).as_bytes());
                 result.extend_from_slice(b",");
             }
-            E::End(TagEnd::Table) => result.extend_from_slice(b")"),
+            E::End(TagEnd::Table) => result.extend_from_slice(b");"),
             E::Start(Tag::TableHead) => result.extend_from_slice(b"table.header("),
             E::End(TagEnd::TableHead) => result.extend_from_slice(b"),"),
 
@@ -188,13 +204,19 @@ fn inner(
                 result.extend_from_slice(b"#emph");
                 start_scope(&mut open_tags, &mut result);
             }
-            E::End(TagEnd::Emphasis) => end_scope(&mut open_tags, &mut result),
+            E::End(TagEnd::Emphasis) => {
+                end_scope(&mut open_tags, &mut result);
+                result.push(b';');
+            }
 
             E::Start(Tag::Strong) => {
                 result.extend_from_slice(b"#strong");
                 start_scope(&mut open_tags, &mut result)
             }
-            E::End(TagEnd::Strong) => end_scope(&mut open_tags, &mut result),
+            E::End(TagEnd::Strong) => {
+                end_scope(&mut open_tags, &mut result);
+                result.push(b';');
+            }
 
             E::Start(Tag::Link {
                 link_type: _,
@@ -207,7 +229,10 @@ fn inner(
                 result.extend_from_slice(b"\")");
                 start_scope(&mut open_tags, &mut result);
             }
-            E::End(TagEnd::Link) => end_scope(&mut open_tags, &mut result),
+            E::End(TagEnd::Link) => {
+                end_scope(&mut open_tags, &mut result);
+                result.push(b';');
+            }
 
             E::Start(Tag::Image {
                 link_type: _,
@@ -225,7 +250,7 @@ fn inner(
                         other => return Err(format!("unexpected {other:?} in image alt text")),
                     }
                 }
-                result.extend_from_slice(b"\")");
+                result.extend_from_slice(b"\");");
             }
             E::End(TagEnd::Image) => unreachable!(),
 
@@ -240,21 +265,25 @@ fn inner(
             }
             E::End(TagEnd::FootnoteDefinition) => {
                 end_scope(&mut open_tags, &mut result);
-                result.extend_from_slice(b"#label(l)]");
+                result.extend_from_slice(b"#label(l)];");
             }
 
             E::Start(
                 Tag::DefinitionList
                 | Tag::DefinitionListDefinition
                 | Tag::DefinitionListTitle
-                | Tag::MetadataBlock(_),
+                | Tag::MetadataBlock(_)
+                | Tag::Superscript
+                | Tag::Subscript,
             ) => todo!(),
 
             E::End(
                 TagEnd::DefinitionList
                 | TagEnd::DefinitionListDefinition
                 | TagEnd::DefinitionListTitle
-                | TagEnd::MetadataBlock(_),
+                | TagEnd::MetadataBlock(_)
+                | TagEnd::Superscript
+                | TagEnd::Subscript,
             ) => todo!(),
 
             E::Start(Tag::HtmlBlock) | E::End(TagEnd::HtmlBlock) => {}
@@ -264,7 +293,7 @@ fn inner(
             E::Code(code) => {
                 result.extend_from_slice(b"#raw(block:false,\"");
                 escape_string(code.as_bytes(), &mut result);
-                result.extend_from_slice(b"\")");
+                result.extend_from_slice(b"\");");
             }
 
             E::Html(s) | E::InlineHtml(s) => {
@@ -285,14 +314,14 @@ fn inner(
                 // We use #inlinemath(`…`) for inline math
                 result.extend_from_slice(b"#inlinemath(\"");
                 escape_string(s.as_bytes(), &mut result);
-                result.extend_from_slice(b"\")");
+                result.extend_from_slice(b"\");");
             }
 
             E::DisplayMath(s) => {
                 // We use #displaymath(`…`) for display math
                 result.extend_from_slice(b"#displaymath(\"");
                 escape_string(s.as_bytes(), &mut result);
-                result.extend_from_slice(b"\")");
+                result.extend_from_slice(b"\");");
             }
 
             E::SoftBreak => result.push(b' '),
@@ -303,7 +332,7 @@ fn inner(
             E::FootnoteReference(label) => {
                 result.extend_from_slice(b"#ref(label(\"");
                 escape_string(label.as_bytes(), &mut result);
-                result.extend_from_slice(b"\"))");
+                result.extend_from_slice(b"\"));");
             }
 
             E::TaskListMarker(_) => unreachable!(),
@@ -438,7 +467,7 @@ fn html_open_tag(cx: &mut HtmlContext<'_, '_>) -> Option<()> {
         }
         cx.result.extend_from_slice(b")");
         match tag_kind {
-            HtmlTagKind::Void => cx.result.push(b')'),
+            HtmlTagKind::Void => cx.result.extend_from_slice(b");"),
             HtmlTagKind::Normal => {
                 cx.open_tags.push(tag_name.0);
                 cx.result.extend_from_slice(b")[");
@@ -470,7 +499,7 @@ fn html_open_tag(cx: &mut HtmlContext<'_, '_>) -> Option<()> {
                     }
                     maybe_decode(mem::take(&mut cx.html), cx.result);
                 }
-                cx.result.extend_from_slice(b"\")");
+                cx.result.extend_from_slice(b"\");");
             }
         }
     }
@@ -496,7 +525,7 @@ fn html_close_tag(cx: &mut HtmlContext<'_, '_>) -> Option<()> {
 
     if let Some(found) = cx.open_tags.iter().rposition(|&t| t == tag_name) {
         for _ in 0..cx.open_tags.len() - found {
-            cx.result.push(b']');
+            cx.result.extend_from_slice(b"];");
         }
         cx.open_tags.truncate(found);
     }
@@ -664,7 +693,8 @@ mod vec_transaction {
         }
     }
 
-    use std::mem;
+    use alloc::vec::Vec;
+    use core::mem;
 }
 use vec_transaction::VecTransaction;
 
@@ -842,7 +872,7 @@ fn escape_text(text: &[u8], result: &mut Vec<u8>) {
             continue;
         }
 
-        let to_escape = b"*_`<>@=-+/$\\'\"~#[];";
+        let to_escape = b"*_`<>@=-+/$\\'\"~#[]";
         if memchr(byte, to_escape).is_some() {
             result.push(b'\\');
         }
@@ -880,28 +910,28 @@ mod tests {
 
     #[test]
     fn styling() {
-        assert_eq!(render_("*i* _i_"), "#emph[i] #emph[i]\n\n");
-        assert_eq!(render_("**b** __b__"), "#strong[b] #strong[b]\n\n");
-        assert_eq!(render_("~s~"), "#strike[s]\n\n");
+        assert_eq!(render_("*i* _i_"), "#emph[i]; #emph[i];\n\n");
+        assert_eq!(render_("**b** __b__"), "#strong[b]; #strong[b];\n\n");
+        assert_eq!(render_("~s~"), "#strike[s];\n\n");
     }
 
     #[test]
     fn links_images() {
         assert_eq!(
             render_("<https://example.org/\">"),
-            "#link(\"https://example.org/\\\"\")[#(\"https://\")example.org\\/\\\"]\n\n"
+            "#link(\"https://example.org/\\\"\")[#(\"https://\")example.org\\/\\\"];\n\n"
         );
         assert_eq!(
             render_("[a](https://example.org)"),
-            "#link(\"https://example.org\")[a]\n\n"
+            "#link(\"https://example.org\")[a];\n\n"
         );
         assert_eq!(
             render_("[a][a]\n\n[a]: https://example.org"),
-            "#link(\"https://example.org\")[a]\n\n"
+            "#link(\"https://example.org\")[a];\n\n"
         );
         assert_eq!(
             render_("![alt text](https://example.org/)"),
-            "#image(\"https://example.org/\",alt:\"alt text\")\n\n",
+            "#image(\"https://example.org/\",alt:\"alt text\");\n\n",
         );
     }
 
@@ -918,7 +948,7 @@ mod tests {
         );
         assert_eq!(
             render_("some`inline code`…"),
-            "some#raw(block:false,\"inline code\")…\n\n"
+            "some#raw(block:false,\"inline code\");…\n\n"
         );
     }
 
@@ -940,7 +970,7 @@ mod tests {
     fn footnote() {
         assert_eq!(
             render_("a [^1].\n\n[^1]: b\n\nc"),
-            "a #ref(label(\"1\")).\n\n#[#show super:s=>none;#let l=\"1\";#footnote[b\n\n]#label(l)]c\n\n"
+            "a #ref(label(\"1\"));.\n\n#[#show super:s=>none;#let l=\"1\";#footnote[b\n\n]#label(l)];c\n\n"
         );
     }
 
@@ -956,15 +986,15 @@ mod tests {
         assert_eq!(with_smart_punct("\"x\""), "“x”\n\n");
         assert_eq!(with_smart_punct("\\\"x\\\""), "\\\"x\\\"\n\n");
         assert_eq!(render_("\"x\""), "\\\"x\\\"\n\n");
-        assert_eq!(render_("--;---"), "\\-\\-\\;\\-\\-\\-\n\n");
-        assert_eq!(with_smart_punct("--;---"), "–\\;—\n\n");
-        assert_eq!(with_smart_punct("\\--;\\-\\--"), "\\-\\-\\;\\-\\-\\-\n\n");
+        assert_eq!(render_("--;---"), "\\-\\-;\\-\\-\\-\n\n");
+        assert_eq!(with_smart_punct("--;---"), "–;—\n\n");
+        assert_eq!(with_smart_punct("\\--;\\-\\--"), "\\-\\-;\\-\\-\\-\n\n");
     }
 
     #[test]
     fn blockquote() {
-        assert_eq!(with_blockquote("> *q*"), "#blockquote[#emph[q]\n\n]\n\n");
-        assert_eq!(render_("> *Quoted*"), "#emph[Quoted]\n\n");
+        assert_eq!(with_blockquote("> *q*"), "#blockquote[#emph[q];\n\n]\n\n");
+        assert_eq!(render_("> *Quoted*"), "#emph[Quoted];\n\n");
         assert_eq!(
             with_blockquote("> Quoted\n> > Nested"),
             "#blockquote[Quoted\n\n#blockquote[Nested\n\n]\n\n]\n\n"
@@ -973,16 +1003,16 @@ mod tests {
 
     #[test]
     fn math() {
-        assert_eq!(with_math("$x$"), "#inlinemath(\"x\")\n\n");
+        assert_eq!(with_math("$x$"), "#inlinemath(\"x\");\n\n");
         assert_eq!(
             with_math("$\\alpha + \\beta$"),
-            "#inlinemath(\"\\\\alpha + \\\\beta\")\n\n"
+            "#inlinemath(\"\\\\alpha + \\\\beta\");\n\n"
         );
-        assert_eq!(with_math("$$x$$"), "#displaymath(\"x\")\n\n");
-        assert_eq!(with_math("a$x$b"), "a#inlinemath(\"x\")b\n\n");
+        assert_eq!(with_math("$$x$$"), "#displaymath(\"x\");\n\n");
+        assert_eq!(with_math("a$x$b"), "a#inlinemath(\"x\");b\n\n");
         assert_eq!(render_("a$x$b"), "a\\$x\\$b\n\n");
         assert_eq!(render_("a$$x$$b"), "a\\$\\$x\\$\\$b\n\n");
-        assert_eq!(with_math("$$\nx\n$$"), "#displaymath(\"\nx\n\")\n\n");
+        assert_eq!(with_math("$$\nx\n$$"), "#displaymath(\"\nx\n\");\n\n");
     }
 
     #[test]
@@ -1060,31 +1090,31 @@ mod tests {
         );
 
         // Void tags, raw text tags
-        assert_eq!(with_html("<br>"), "#(html.br)((:))");
+        assert_eq!(with_html("<br>"), "#(html.br)((:));");
         assert_eq!(
             with_html("<script>&amp;\""),
-            "#(html.script)((:),\"&amp;\\\"\")"
+            "#(html.script)((:),\"&amp;\\\"\");"
         );
         assert_eq!(
             with_html("x<script>&amp;\""),
-            "x#(html.script)((:),\"&\\\"\")\n\n"
+            "x#(html.script)((:),\"&\\\"\");\n\n"
         );
-        assert_eq!(with_html("<title>&amp;\""), "#(html.title)((:),\"&\\\"\")");
+        assert_eq!(with_html("<title>&amp;\""), "#(html.title)((:),\"&\\\"\");");
         assert_eq!(
             with_html("x<title>&amp;amp;\""),
-            "x#(html.title)((:),\"&amp;\\\"\")\n\n"
+            "x#(html.title)((:),\"&amp;\\\"\");\n\n"
         );
         assert_eq!(
             with_html("<script>x</script</script>y"),
-            "#(html.script)((:),\"x</script\")y"
+            "#(html.script)((:),\"x</script\");y"
         );
         assert_eq!(
             with_html("<script>\n\nx</script>y"),
-            "#(html.script)((:),\"\n\nx\")y"
+            "#(html.script)((:),\"\n\nx\");y"
         );
         assert_eq!(
             with_html("<title>\n\nx</title>y"),
-            "#(html.title)((:),\"\n\")xy\n\n"
+            "#(html.title)((:),\"\n\");xy\n\n"
         );
     }
 
@@ -1095,11 +1125,11 @@ mod tests {
         assert_eq!(with_html("</p >"), "");
 
         // Closing and autoclosing
-        assert_eq!(with_html("<b>a</b>b"), "#(html.b)((:))[a]b\n\n");
-        assert_eq!(with_html("<b>a</B>b"), "#(html.b)((:))[a]b\n\n");
+        assert_eq!(with_html("<b>a</b>b"), "#(html.b)((:))[a];b\n\n");
+        assert_eq!(with_html("<b>a</B>b"), "#(html.b)((:))[a];b\n\n");
         assert_eq!(
             with_html("<b><em>a</b>b"),
-            "#(html.b)((:))[#(html.em)((:))[a]]b\n\n"
+            "#(html.b)((:))[#(html.em)((:))[a];];b\n\n"
         );
         assert_eq!(
             with_html("<b><em>a</p>b"),
@@ -1107,7 +1137,7 @@ mod tests {
         );
         assert_eq!(
             with_html("<em><b>a</b>b</em>"),
-            "#(html.em)((:))[#(html.b)((:))[a]b]\n\n"
+            "#(html.em)((:))[#(html.b)((:))[a];b];\n\n"
         );
     }
 
@@ -1123,15 +1153,15 @@ mod tests {
     fn autoclosing() {
         assert_eq!(
             with_html("x<b>*<b>y*z</b>w"),
-            "x#(html.b)((:))[#emph[#(html.b)((:))[y]]z]w\n\n"
+            "x#(html.b)((:))[#emph[#(html.b)((:))[y];];z];w\n\n"
         );
         assert_eq!(
             with_html("- <b>x\n- y"),
-            "#list([#(html.b)((:))[x]],[y],)\n",
+            "#list([#(html.b)((:))[x];],[y],)\n",
         );
         assert_eq!(
             with_html("a<b>b*c</b>d*e"),
-            "a#(html.b)((:))[b#emph[cd]e\n\n]",
+            "a#(html.b)((:))[b#emph[cd];e\n\n]",
         );
     }
 
@@ -1159,7 +1189,7 @@ mod tests {
             "#table(align:(auto,auto,),columns:2,",
             "table.header([Column 1],[Column 2],),",
             "[Cell 1, Row 1],[Cell 2, Row 1],",
-            "[Cell 1, Row 2],[Cell 2, Row 2],)",
+            "[Cell 1, Row 2],[Cell 2, Row 2],);",
         );
         assert_eq!(render_(example_md), example_typst);
 
@@ -1173,16 +1203,15 @@ mod tests {
             "#table(align:(auto,auto,auto,),columns:3,",
             "table.header([a],[b],[c],),",
             "[d],[e],[],",
-            "[f],[g],[h],)",
+            "[f],[g],[h],);",
         );
         assert_eq!(render_(missing_cell_md), missing_cell_typst);
     }
 
     #[test]
     fn readme() {
-        let readme =
-            fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../README.md")).unwrap();
-        with_raw_typst(&readme);
+        let readme = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../README.md"));
+        with_raw_typst(readme);
     }
 
     fn with_h1_level(s: &str, h1_level: u8) -> String {
@@ -1255,20 +1284,27 @@ mod tests {
     use crate::HtmlTagKind;
     use crate::HtmlTags;
     use crate::Options;
-    use std::collections::HashMap;
-    use std::fs;
+    use alloc::string::String;
+    use alloc::vec::Vec;
+    use hashbrown::HashMap;
 }
 
+use alloc::format;
+use alloc::string::String;
+use alloc::string::ToString;
+use alloc::vec;
+use alloc::vec::Vec;
 use bitflags::bitflags;
+use core::borrow::Borrow;
+use core::hash::Hash;
+use core::hash::Hasher;
+use core::mem;
+use core::str;
+use dlmalloc::GlobalDlmalloc;
+use hashbrown::HashMap;
 use memchr::memchr;
 use memchr::memchr2;
 use memchr::memmem;
 use pulldown_cmark::Alignment;
 use pulldown_cmark::CowStr;
-use std::borrow::Borrow;
-use std::collections::HashMap;
-use std::hash::Hash;
-use std::hash::Hasher;
-use std::mem;
-use std::str;
 use wasm_minimal_protocol::wasm_func;

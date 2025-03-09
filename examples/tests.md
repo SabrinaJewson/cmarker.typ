@@ -87,9 +87,7 @@ We have Markdown smart punctuation, such as en dashes (-- and –) and em dashes
 <!--typst-begin-exclude-->
 This should not appear.<!--typst-end-exclude-->
 
-Raw Typst code:
-
-<!--raw-typst $ 2 + 2 = #(2 + 2) $-->
+Raw Typst code: <!--raw-typst 2 + 2 = #(2 + 2) -->
 
 Tables:
 
@@ -107,7 +105,7 @@ Images:
 
 Footnotes 1, 2, 1: [^before] [^after] [^before]
 
-[^after]: abc **bold text**
+[^after]: abc **bold text in footnote**
 
 ## HTML tests
 

@@ -8,11 +8,22 @@ publish = false
 path = "lib.rs"
 crate-type = ["cdylib"]
 
+[features]
+default = ["std"]
+std = []
+
 [dependencies]
 bitflags = "2.4.1"
+hashbrown = "0.15.2"
 itoa = "1.0.9"
-memchr = "2.6.4"
-pulldown-cmark = { version = "0.12.1", default-features = false }
-phf = "0.11.3"
-wasm-minimal-protocol.git = "https://github.com/astrale-sharp/wasm-minimal-protocol"
-wasm-minimal-protocol.rev = "637508c184c7bfad7caadf109e2fa3871d99c57e"
+memchr = { version = "2.7.4", default-features = false }
+# https://github.com/pulldown-cmark/pulldown-cmark/pull/1026
+pulldown-cmark.git = "https://github.com/SabrinaJewson/pulldown-cmark.rs"
+pulldown-cmark.rev = "4203ce5bd8ef79f67357717d2b728579f3dec294"
+pulldown-cmark.default-features = false
+pulldown-cmark.features = ["hashbrown"]
+phf = { version = "0.11.3", default-features = false }
+# https://github.com/astrale-sharp/wasm-minimal-protocol/pull/35
+wasm-minimal-protocol.git = "https://github.com/SabrinaJewson/wasm-minimal-protocol.rs"
+wasm-minimal-protocol.rev = "992f87bfb3f912742ea85d8efd29db2452c09202"
+dlmalloc = { version = "0.2.8", features = ["global"] }

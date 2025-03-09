@@ -1,0 +1,15 @@
+[package]
+name = "test-runner"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[[bin]]
+name = "test-runner"
+path = "main.rs"
+
+[dependencies]
+anyhow = "1.0.97"
+owo-colors = "4.2.0"
+prettydiff = { version = "0.8.0", default-features = false }
+rayon = "1.10.0"

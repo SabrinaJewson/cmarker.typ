@@ -1,0 +1,5 @@
+Two horizontal rules:
+
+---
+
+<hr>

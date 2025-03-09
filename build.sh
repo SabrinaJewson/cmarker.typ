@@ -1,5 +1,5 @@
 #!/bin/sh
 set -e
 cd "$(dirname $0)"
-cargo build -p plugin --release --target wasm32-unknown-unknown
-cp ./target/wasm32-unknown-unknown/release/plugin.wasm .
+cargo build -p plugin --release --no-default-features --target wasm32v1-none
+cp ./target/wasm32v1-none/release/plugin.wasm .

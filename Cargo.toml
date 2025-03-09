@@ -1,10 +1,11 @@
 [workspace]
-members = ["plugin", "plugin/generate-entities"]
+members = ["plugin", "plugin/generate-entities", "test-runner"]
 resolver = "3"
 
 [profile.release]
 lto = "fat"
+
+[profile.release.package.plugin]
 strip = true
 opt-level = "z"
 codegen-units = 1
-panic = "abort"

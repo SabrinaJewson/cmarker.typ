@@ -38,5 +38,7 @@ fn test() {
     assert_eq!(s2, "food");
 }
 
+use alloc::boxed::Box;
+use alloc::vec::Vec;
+use core::cell::UnsafeCell;
 use pulldown_cmark::CowStr;
-use std::cell::UnsafeCell;
