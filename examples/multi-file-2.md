@@ -1,3 +1,3 @@
-# Another nice file <!--raw-typst <file-2> -->
+# Another nice file <!--raw-typst <multi-file-2.md> -->
 
-See also [file](file-1).
+See also [file](multi-file-1.md).
