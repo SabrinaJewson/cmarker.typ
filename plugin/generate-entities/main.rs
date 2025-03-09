@@ -29,7 +29,7 @@ fn main() {
         let value = format!("\"{}\"", value.escape_default());
         println!("Adding {name} ⇒ {value}");
         total += 1;
-        map.entry(name.as_bytes(), &value);
+        map.entry(name.as_bytes(), value);
     }
     println!("Making a map with {total} entries");
     let code = format!(

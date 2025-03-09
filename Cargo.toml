@@ -9,3 +9,8 @@ lto = "fat"
 strip = true
 opt-level = "z"
 codegen-units = 1
+
+[patch.crates-io]
+phf_codegen   = { git = "https://github.com/conradludgate/rust-phf", rev = "b6bba7216937ad4808c1a7097017aa88551a4463" }
+phf_generator = { git = "https://github.com/conradludgate/rust-phf", rev = "b6bba7216937ad4808c1a7097017aa88551a4463" }
+phf_shared    = { git = "https://github.com/conradludgate/rust-phf", rev = "b6bba7216937ad4808c1a7097017aa88551a4463" }
