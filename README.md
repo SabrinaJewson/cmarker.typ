@@ -359,5 +359,5 @@ That said, Typst itself is well-sandboxed anyway.
 	which produces the `plugin.wasm` necessary to use this.
 - Compile examples with `typst compile examples/{name}.typ`.
 - Compile this README to PDF with `typst compile README.typ`.
-- Run tests with `cargo test` and `cargo run -p test-runner`.
+- Run tests with `cargo test --workspace` and `cargo run -p test-runner`.
 - Fuzz the library with `cargo +nightly fuzz run fuzz`.

@@ -15,7 +15,7 @@
             "steps": [
                 { "uses": "actions/checkout@v4" },
                 { "uses": "dtolnay/rust-toolchain@stable" },
-                { "run": "cargo test --workspace --all-targets" },
+                { "run": "cargo test --workspace" },
             ],
         },
         "html-tests": {
