@@ -291,6 +291,11 @@ We support CommonMark with a couple extensions.
 | -------- | -------- |
 | Row 1 Cell 1 | Row 1 Cell 2 |
 | Row 2 Cell 1 | Row 2 Cell 2 |
+- Footnotes:
+	```md
+	Some text[^footnote]
+	[^footnote]: content
+	```
 - HTML, e.g. `<sub>subscript</sub>` for <sub>subscript</sub>.
 
 ## Interleaving Markdown and Typst
