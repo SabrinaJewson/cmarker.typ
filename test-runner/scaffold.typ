@@ -11,7 +11,6 @@
     html.elem("code", attrs: attrs, it.text)
   }
 }
-#show line.where(length: 100%): it => html.elem("hr")
 #show image: it => {
   let attrs = (src: it.source)
   if it.alt != none {
@@ -48,7 +47,10 @@
     blockquote: body => html.elem("blockquote", body),
     raw-typst: true,
     math: (text, block: true) => raw(block: block, text, lang: "math"),
-    scope: (image: (path, alt: none) => image(path, alt: alt)),
+    scope: (
+      image: (path, alt: none) => image(path, alt: alt),
+      rule: () => html.elem("hr"),
+    ),
   )
   if "show-source" in sys.inputs {
     let source = cmarker.render(read(sys.inputs.md), show-source: true, ..args).text

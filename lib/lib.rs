@@ -296,7 +296,7 @@ pub fn run(
             E::SoftBreak => result.push(b' '),
             E::HardBreak => result.extend_from_slice(b"\\ "),
 
-            E::Rule => result.extend_from_slice(b"#line(length:100%)\n"),
+            E::Rule => result.extend_from_slice(b"#rule()\n"),
 
             E::FootnoteReference(label) => {
                 result.extend_from_slice(b"#ref(label(\"");
@@ -930,7 +930,7 @@ mod tests {
 
     #[test]
     fn horiz() {
-        assert_eq!(render_("---\n"), "#line(length:100%)\n",);
+        assert_eq!(render_("---\n"), "#rule()\n",);
     }
 
     #[test]

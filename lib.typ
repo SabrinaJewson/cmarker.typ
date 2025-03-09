@@ -36,7 +36,9 @@
     markdown = markdown.text
   }
 
-  let html-defaults = (
+  scope = (rule: line.with(length: 100%), ..scope)
+
+  html = (
     sub: (attrs, body) => sub(body),
     sup: (attrs, body) => super(body),
     mark: (attrs, body) => highlight(body),
@@ -109,7 +111,7 @@
     },
 
 
-    hr: ("void", (attrs) => scope.at("line", default: line)(length: 100%)),
+    hr: ("void", (attrs) => (scope.rule)()),
     a: (attrs, body) => scope.at("link", default: link)(
       if attrs.href.starts-with("#") { label(attrs.href.slice(1)) } else { attrs.href },
       body,
@@ -120,6 +122,7 @@
     code: ("raw-text", (attrs, body) => scope.at("raw", default: raw)(body)),
     br: ("void", (attrs) => scope.at("linebreak", default: linebreak)()),
     img: ("void", (attrs) => scope.at("image", default: image)(attrs.src, alt: attrs.at("alt", default: none))),
+    ..html,
   )
 
   let options = 0
@@ -129,7 +132,7 @@
   if blockquote != none {
     options += 0b00000010
     scope += (blockquote: blockquote)
-    html-defaults += (blockquote: (attrs, body) => blockquote(body))
+    html += (blockquote: (attrs, body) => blockquote(body), ..html)
   }
   if raw-typst {
     options += 0b00000100
@@ -141,11 +144,6 @@
 
   let options-bytes = (options, h1-level)
 
-  for (k, v) in html-defaults {
-    if k not in html {
-      html.insert(k, v)
-    }
-  }
   scope.html = (:)
   for (tag-name, value) in html {
     let (kind, callback) = if type(value) == function { ("normal", value) } else { value };
