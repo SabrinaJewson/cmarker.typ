@@ -1,0 +1,33 @@
+{
+    "on": ["push", "pull_request"],
+    "name": "CI",
+    "jobs": {
+        "clippy": {
+            "name": "Clippy",
+            "runs-on": "ubuntu-latest",
+            "steps": [
+                { "uses": "actions/checkout@v4" },
+                { "uses": "dtolnay/rust-toolchain@stable", "with": { "components": "clippy" } },
+                { "run": "cargo clippy --workspace --all-targets -- --Dwarnings" },
+            ],
+        },
+        "test": {
+            "name": "Test",
+            "runs-on": "ubuntu-latest",
+            "steps": [
+                { "uses": "actions/checkout@v4" },
+                { "uses": "dtolnay/rust-toolchain@stable" },
+                { "run": "cargo test --workspace --all-targets -- --Dwarnings" },
+            ],
+        },
+        "fmt": {
+            "name": "Rustfmt",
+            "runs-on": "ubuntu-latest",
+            "steps": [
+                { "uses": "actions/checkout@v4" },
+                { "uses": "dtolnay/rust-toolchain@stable", "with": { "components": "rustfmt" } },
+                { "run": "cargo fmt --all -- --check" },
+            ],
+        },
+    },
+}
