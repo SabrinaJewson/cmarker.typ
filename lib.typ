@@ -54,7 +54,7 @@
       scope.at("list", default: list)(..untag-children(body, "<li>").map(((_, _, c)) => c))
     },
     ol: (attrs, body) => {
-      scope.at("enum", default: list)(..untag-children(body, "<li>").map(((_, _, c)) => c))
+      scope.at("enum", default: enum)(..untag-children(body, "<li>").map(((_, _, c)) => c))
     },
 
     dt: (attrs, body) => tag-content(body, "<dt>"),
