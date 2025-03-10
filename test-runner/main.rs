@@ -13,17 +13,15 @@ fn main() -> anyhow::Result<()> {
     fs::copy("target/wasm32v1-none/debug/plugin.wasm", "plugin.wasm")
         .context("copying plugin.wasm")?;
 
-    let mut entries = fs::read_dir("tests")
+    let entries = fs::read_dir("tests")
         .context("reading tests dir")?
         .map(|entry| entry.context("entry in tests dir").map(|e| e.path()))
         .collect::<anyhow::Result<Vec<_>>>()?;
 
-    entries.retain(|e| e.extension() == Some("md".as_ref()));
-
     let errors = entries
         .par_iter()
-        .map(|md_path| -> anyhow::Result<String> {
-            match run_test(md_path, bless).with_context(|| md_path.display().to_string())? {
+        .map(|path| -> anyhow::Result<String> {
+            match run_test(path, bless).with_context(|| path.display().to_string())? {
                 Ok(()) => Ok(String::new()),
                 Err(e) => Ok(e),
             }
@@ -41,8 +39,18 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn run_test(md_path: &Path, bless: bool) -> anyhow::Result<Result<(), String>> {
-    let html_path = md_path.with_extension("html");
+fn run_test(path: &Path, bless: bool) -> anyhow::Result<Result<(), String>> {
+    enum Kind {
+        Markdown,
+        Typst,
+    }
+
+    let kind = match path.extension().and_then(OsStr::to_str) {
+        Some("md") => Kind::Markdown,
+        Some("typ") => Kind::Typst,
+        _ => return Ok(Ok(())),
+    };
+    let html_path = path.with_extension("html");
     let old = match fs::exists(&html_path)? {
         false => String::new(),
         true => fs::read_to_string(&html_path)?,
@@ -50,12 +58,20 @@ fn run_test(md_path: &Path, bless: bool) -> anyhow::Result<Result<(), String>> {
 
     let typst_command = || {
         let mut command = process::Command::new("typst");
-        command.arg("--color=always");
-        command.args(["compile", "test-runner/scaffold.typ", "-"]);
+        command.args(["--color=always", "compile"]);
+        match kind {
+            Kind::Markdown => {
+                command.arg("test-runner/scaffold.typ");
+                command.arg(format!("--input=md=../{}", path.display()));
+            }
+            Kind::Typst => {
+                command.arg(path);
+            }
+        }
+        command.arg("-");
         command.arg("--format=html");
         command.arg("--features=html");
         command.arg("--root=.");
-        command.arg(format!("--input=md=../{}", md_path.display()));
         command
     };
     let output = typst_command().output().context("running typst")?;
@@ -65,7 +81,7 @@ fn run_test(md_path: &Path, bless: bool) -> anyhow::Result<Result<(), String>> {
     if !output.status.success() {
         let mut msg = format!(
             "\n{}\n",
-            format_args!("{}{}: Typst errored", "Error: ".red(), md_path.display()).bold(),
+            format_args!("{}{}: Typst errored", "Error: ".red(), path.display()).bold(),
         );
         for line in stderr.lines() {
             msg.push_str("\n    ");
@@ -77,11 +93,13 @@ fn run_test(md_path: &Path, bless: bool) -> anyhow::Result<Result<(), String>> {
             .output()
             .context("running typst again")?;
         if !output.stdout.is_empty() {
-            let stdout = String::from_utf8(output.stdout).context("stdout not utf-8")?;
-            if let Some((hex, _)) = stdout
+            let mut stdout = &*String::from_utf8(output.stdout).context("stdout not utf-8")?;
+
+            while let Some((hex, rest)) = stdout
                 .split_once("SOURCESTART")
                 .and_then(|(_, rest)| rest.split_once("SOURCEEND"))
             {
+                stdout = rest;
                 let bytes = hex
                     .as_bytes()
                     .chunks_exact(2)
@@ -122,7 +140,7 @@ fn run_test(md_path: &Path, bless: bool) -> anyhow::Result<Result<(), String>> {
         } else if bless {
             println!("{} {}", "Unchanged".bold().white(), html_path.display());
         } else {
-            println!("{} {}", "Success".green().bold(), md_path.display());
+            println!("{} {}", "Success".green().bold(), path.display());
         }
         return Ok(Ok(()));
     }
@@ -151,6 +169,7 @@ use owo_colors::OwoColorize as _;
 use rayon::iter::IntoParallelRefIterator as _;
 use rayon::iter::ParallelIterator as _;
 use std::env;
+use std::ffi::OsStr;
 use std::fmt::Write as _;
 use std::fs;
 use std::path::Path;

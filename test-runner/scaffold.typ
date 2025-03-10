@@ -1,4 +1,4 @@
-#import "/lib.typ" as cmarker
+#import "common.typ": run-cmarker
 
 #show raw: it => {
   let attrs = (:)
@@ -52,17 +52,5 @@
       rule: () => html.elem("hr"),
     ),
   )
-  if "show-source" in sys.inputs {
-    let source = cmarker.render(read(sys.inputs.md), show-source: true, ..args).text
-    "SOURCESTART"
-    for byte in bytes(source) {
-      if byte < 0x10 {
-        "0"
-      }
-      str(byte, base: 16)
-    }
-    "SOURCEEND"
-  } else {
-    cmarker.render(read(sys.inputs.md), ..args)
-  }
+  run-cmarker(read(sys.inputs.md), ..args)
 }
