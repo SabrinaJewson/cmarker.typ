@@ -39,9 +39,9 @@
   scope = (rule: line.with(length: 100%), ..scope)
 
   html = (
-    sub: (attrs, body) => sub(body),
-    sup: (attrs, body) => super(body),
-    mark: (attrs, body) => highlight(body),
+    sub: (attrs, body) => scope.at("sub", default: sub)(body),
+    sup: (attrs, body) => scope.at("sup", default: super)(body),
+    mark: (attrs, body) => scope.at("highlight", default: highlight)(body),
     h1: (attrs, body) => scope.at("heading", default: heading)(level: h1-level + 0, body),
     h2: (attrs, body) => scope.at("heading", default: heading)(level: h1-level + 1, body),
     h3: (attrs, body) => scope.at("heading", default: heading)(level: h1-level + 2, body),
@@ -50,12 +50,16 @@
     h6: (attrs, body) => scope.at("heading", default: heading)(level: h1-level + 5, body),
 
     li: (attrs, body) => tag-content(body, "<li>"),
-    ul: (attrs, body) => list(..untag-children(body, "<li>").map(((_, _, c)) => c)),
-    ol: (attrs, body) => enum(..untag-children(body, "<li>").map(((_, _, c)) => c)),
+    ul: (attrs, body) => {
+      scope.at("list", default: list)(..untag-children(body, "<li>").map(((_, _, c)) => c))
+    },
+    ol: (attrs, body) => {
+      scope.at("enum", default: list)(..untag-children(body, "<li>").map(((_, _, c)) => c))
+    },
 
     dt: (attrs, body) => tag-content(body, "<dt>"),
     dd: (attrs, body) => tag-content(body, "<dd>"),
-    dl: (attrs, body) => terms(..(
+    dl: (attrs, body) => scope.at("terms", default: terms)(..(
       untag-children(body, ("<dt>", "<dd>"))
         .map(((_, _, c)) => c)
         .chunks(2, exact: true)
@@ -107,7 +111,7 @@
       if rows.footer.len() != 0 {
         args.push(table.footer(..rows.footer.flatten()))
       }
-      table(columns: columns, ..args)
+      scope.at("table", default: table)(columns: columns, ..args)
     },
 
 
