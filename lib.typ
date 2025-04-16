@@ -2,13 +2,13 @@
 #let render(
   markdown,
   smart-punctuation: true,
-  blockquote: none,
   math: none,
   h1-level: 1,
   raw-typst: true,
   html: (:),
   scope: (:),
   show-source: false,
+  blockquote: none,
 ) = {
   // A simple system for tagging content with invisible metadata.
   // Used to implement various HTML tags that need some amount of structure.
@@ -37,6 +37,12 @@
   }
 
   scope = (rule: line.with(length: 100%), ..scope)
+
+  if blockquote != none {
+    scope += (
+      quote: (block: false, ..rest) => if block { blockquote(..rest) } else { quote(..rest) },
+    )
+  }
 
   html = (
     sub: (attrs, body) => scope.at("sub", default: sub)(body),
@@ -126,6 +132,8 @@
     code: ("raw-text", (attrs, body) => scope.at("raw", default: raw)(body)),
     br: ("void", (attrs) => scope.at("linebreak", default: linebreak)()),
     img: ("void", (attrs) => scope.at("image", default: image)(attrs.src, alt: attrs.at("alt", default: none))),
+    blockquote: (attrs, body) => scope.at("quote", default: quote)(block: true, body),
+
     ..html,
   )
 
@@ -133,16 +141,11 @@
   if smart-punctuation {
     options += 0b00000001
   }
-  if blockquote != none {
-    options += 0b00000010
-    scope += (blockquote: blockquote)
-    html += (blockquote: (attrs, body) => blockquote(body), ..html)
-  }
   if raw-typst {
-    options += 0b00000100
+    options += 0b00000010
   }
   if math != none {
-    options += 0b00001000
+    options += 0b00000100
     scope += (inlinemath: math.with(block: false), displaymath: math.with(block: true))
   }
 

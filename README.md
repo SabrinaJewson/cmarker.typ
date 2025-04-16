@@ -48,13 +48,13 @@ We offer a single function:
 render(
   markdown,
   smart-punctuation: true,
-  blockquote: none,
   math: none,
   h1-level: 1,
   raw-typst: true,
   html: (:),
   scope: (:),
   show-source: false,
+  blockquote: none,
 ) -> content
 ```
 
@@ -79,23 +79,6 @@ The parameters are as follows:
 	this conversion is done through the Markdown parser rather than Typst.
 	- Accepted values: Booleans.
 	- Default value: `true`.
-
-- `blockquote`:
-	A callback to be used when a blockquote is encountered in the Markdown,
-	or `none` if blockquotes should be treated as normal text.
-	Because Typst does not support blockquotes natively,
-	the user must configure this.
-	- Accepted values: Functions accepting content and returning content, or `none`.
-	- Default value: `none`.
-
-	For example, to display a black border to the left of the text
-	one can use:
-	```typc
-	box.with(stroke: (left: 1pt + black), inset: (left: 5pt, y: 6pt))
-	```
-	<!--raw-typst
-	#(box.with(stroke: (left: 1pt + black), inset: (left: 5pt, y: 6pt)))[which displays like this.]
-	-->
 
 - `math`:
 	A callback to be used when equations are encountered in the Markdown,
@@ -191,6 +174,7 @@ The parameters are as follows:
 		`<s>`,
 		`<code>`,
 		`<br>`,
+		`<blockquote>`,
 		`<img>`.
 
 	For example, the following code
@@ -220,6 +204,16 @@ The parameters are as follows:
 	will be instead rendered in a code block.
 	- Accepted values: Booleans.
 	- Default value: `false`.
+
+- `blockquote`:
+	Deprecated!
+	This used to control how blockquotes were rendered,
+	but we now default to `quote(block: true)`.
+	If you want to override how blockquotes look,
+	either use `#show quote.where(block: true)`
+	or use `scope: (quote: …)`.
+	- Accepted values: Functions accepting content and returning content, or `none`.
+	- Default value: `none`.
 
 This function returns the rendered `content`.
 

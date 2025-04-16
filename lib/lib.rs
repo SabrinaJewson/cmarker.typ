@@ -7,9 +7,8 @@ bitflags! {
     #[repr(transparent)]
     pub struct Options: u8 {
         const SMART_PUNCTUATION = 0b0000_0001;
-        const BLOCKQUOTE = 0b0000_0010;
-        const RAW_TYPST = 0b0000_0100;
-        const MATH = 0b0000_1000;
+        const RAW_TYPST = 0b0000_0010;
+        const MATH = 0b0000_0100;
     }
 }
 
@@ -78,16 +77,12 @@ pub fn run(
             E::End(TagEnd::Heading(_)) => result.extend_from_slice(b"\n"),
 
             E::Start(Tag::BlockQuote(_)) => {
-                if options.contains(Options::BLOCKQUOTE) {
-                    result.extend_from_slice(b"#blockquote");
-                    start_scope(&mut open_tags, &mut result);
-                }
+                result.extend_from_slice(b"#quote(block:true)");
+                start_scope(&mut open_tags, &mut result);
             }
             E::End(TagEnd::BlockQuote(_)) => {
-                if options.contains(Options::BLOCKQUOTE) {
-                    end_scope(&mut open_tags, &mut result);
-                    result.extend_from_slice(b"\n\n");
-                }
+                end_scope(&mut open_tags, &mut result);
+                result.extend_from_slice(b"\n\n");
             }
 
             E::Start(Tag::Strikethrough) => {
@@ -969,11 +964,10 @@ mod tests {
 
     #[test]
     fn blockquote() {
-        assert_eq!(with_blockquote("> *q*"), "#blockquote[#emph[q];\n\n]\n\n");
-        assert_eq!(render_("> *Quoted*"), "#emph[Quoted];\n\n");
+        assert_eq!(render_("> *q*"), "#quote(block:true)[#emph[q];\n\n]\n\n");
         assert_eq!(
-            with_blockquote("> Quoted\n> > Nested"),
-            "#blockquote[Quoted\n\n#blockquote[Nested\n\n]\n\n]\n\n"
+            render_("> Quoted\n> > Nested"),
+            "#quote(block:true)[Quoted\n\n#quote(block:true)[Nested\n\n]\n\n]\n\n"
         );
     }
 
@@ -1197,9 +1191,6 @@ mod tests {
     }
     fn with_smart_punct(s: &str) -> String {
         render(s, &HashMap::new(), Options::SMART_PUNCTUATION, 1)
-    }
-    fn with_blockquote(s: &str) -> String {
-        render(s, &HashMap::new(), Options::BLOCKQUOTE, 1)
     }
     fn with_math(s: &str) -> String {
         render(s, &HashMap::new(), Options::MATH, 1)

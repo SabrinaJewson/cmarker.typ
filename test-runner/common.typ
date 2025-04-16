@@ -3,22 +3,22 @@
 #let run-cmarker(
   markdown,
   smart-punctuation: true,
-  blockquote: none,
   math: none,
   h1-level: 1,
   raw-typst: true,
   html: (:),
   scope: (:),
+  blockquote: none,
 ) = {
   let args = arguments(
     markdown,
     smart-punctuation: smart-punctuation,
-    blockquote: blockquote,
     math: math,
     h1-level: h1-level,
     raw-typst: raw-typst,
     html: html,
     scope: scope,
+    blockquote: blockquote,
   )
 
   if "show-source" in sys.inputs {

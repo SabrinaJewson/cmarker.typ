@@ -44,7 +44,6 @@
 
 #{
   let args = (
-    blockquote: body => html.elem("blockquote", body),
     raw-typst: true,
     math: (text, block: true) => raw(block: block, text, lang: "math"),
     scope: (
