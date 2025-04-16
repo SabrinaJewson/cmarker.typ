@@ -223,7 +223,7 @@ The parameters are as follows:
 
 This function returns the rendered `content`.
 
-## Resolving Paths Correctly
+## Resolving Paths Correctly <!--raw-typst <resolving-paths-correctly> -->
 
 Because of how Typst handles paths,
 elements like images will by default resolve
@@ -369,6 +369,43 @@ Although I tried my best to escape everything correctly,
 I won’t provide a hard guarantee that everything is fully sandboxed
 even if you set `raw-typst: false`.
 That said, Typst itself is well-sandboxed anyway.
+
+## FAQ
+
+### Typst is saying it can’t find my image – it’s looking inside `cmarker` for some reason!
+
+<!--typst-begin-exclude-->
+See [Resolving Paths Correctly](#resolving-paths-correctly).
+<!--typst-end-exclude-->
+<!--raw-typst See @resolving-paths-correctly. -->
+
+### How do I include multiple Markdown files in one project?
+
+See [the multi-file example](https://github.com/SabrinaJewson/cmarker.typ/blob/main/examples/multi-file.typ).
+
+### My image file contains spaces, but it gets rendered as text!
+
+This is a Markdown quirk – `![alt](image path.png)` is seen as plain text
+instead of an image.
+To fix it, use `![alt](<image path.png>)`.
+
+### My Markdown after an open HTML tag is getting rendered as text!
+
+Another Markdown quirk –
+in code like `<p>hello _world_</p>`
+or `<!-- -->hello _world_`,
+italics will not be generated.
+
+There are two fixes:
+either insert some empty inline-level HTML at the start,
+e.g. `<span></span><p>hello _world_</p>`,
+or insert two newlines after the opening tag:
+
+```
+<p>
+
+hello _world_</p>
+```
 
 ## Development
 
