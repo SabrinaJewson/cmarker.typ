@@ -19,7 +19,7 @@ fuzz_target!(|markdown: &str| {
         return;
     }
 
-    let options = Options::SMART_PUNCTUATION | Options::BLOCKQUOTE | Options::MATH;
+    let options = Options::SMART_PUNCTUATION | Options::MATH;
     let text = cmarker_typst::run(markdown, &HTML_TAGS, options, 1).unwrap();
     let text = String::from_utf8(text).unwrap();
     if let Some(error) = typst_syntax::parse(&text).errors().into_iter().next() {
