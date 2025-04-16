@@ -111,7 +111,7 @@ The parameters are as follows:
 
 	For example, to render math equation as a Typst math block,
 	one can use:
-	```typc
+	```typst
 	#import "@preview/mitex:0.2.4": mitex
 	#cmarker.render(`$\int_1^2 x \mathrm{d} x$`, math: mitex)
 	```
@@ -196,7 +196,7 @@ The parameters are as follows:
 	For example, the following code
 	would allow you to write `<circle radius="25">` to render a 25pt circle:
 
-	```typc
+	```typst
 	#cmarker.render(read("input.md"), html: (
 	  circle: ("void", attrs => circle(radius: int(attrs.radius) * 1pt))
 	))
