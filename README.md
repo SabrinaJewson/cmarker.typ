@@ -223,7 +223,7 @@ The parameters are as follows:
 
 This function returns the rendered `content`.
 
-## Resolving Paths Correctly <!--raw-typst <resolving-paths-correctly> -->
+## Resolving Paths Correctly<!--raw-typst <resolving-paths-correctly> -->
 
 Because of how Typst handles paths,
 elements like images will by default resolve
