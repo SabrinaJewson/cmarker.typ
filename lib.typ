@@ -21,16 +21,28 @@
       and content.children.at(0).value.at(0) == tag
   )
   let untag-content(content) = (..content.children.at(0).value, content.children.at(1))
-  let untag-children(content, tag) = {
+  let take-tagged-children(content, tag) = {
     if type(tag) != array {
       tag = (tag,)
     }
+    let tagged = ()
+    let rest = ()
     if tag.any(t => is-tagged(content, t)) {
-      (untag-content(content),)
+      tagged.push(untag-content(content))
+    } else if content.func() == [].func() {
+      for child in content.children {
+        if tag.any(t => is-tagged(child, t)) {
+          tagged.push(untag-content(child))
+        } else {
+          rest.push(child)
+        }
+      }
     } else {
-      content.children.filter(c => tag.any(t => is-tagged(c, t))).map(untag-content)
+      rest.push(content)
     }
+    (tagged: tagged, rest: for r in rest { r })
   }
+  let untag-children(content, tag) = take-tagged-children(content, tag).tagged
 
   if type(markdown) == content and markdown.has("text") {
     markdown = markdown.text
@@ -120,6 +132,12 @@
       scope.at("table", default: table)(columns: columns, ..args)
     },
 
+    figcaption: (attrs, body) => tag-content(body, "<figcaption>"),
+    figure: (attrs, body) => {
+      let (tagged: captions, rest) = take-tagged-children(body, "<figcaption>")
+      let caption = if captions.len() >= 1 { captions.at(0).at(2) } else { none }
+      figure(caption: caption, rest)
+    },
 
     hr: ("void", (attrs) => (scope.rule)()),
     a: (attrs, body) => scope.at("link", default: link)(

@@ -175,6 +175,8 @@ The parameters are as follows:
 		`<code>`,
 		`<br>`,
 		`<blockquote>`,
+		`<figure>`,
+		`<figcaption>`,
 		`<img>`.
 
 	For example, the following code
