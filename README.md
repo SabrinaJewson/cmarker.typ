@@ -219,7 +219,7 @@ The parameters are as follows:
 
 This function returns the rendered `content`.
 
-## Resolving Paths Correctly<!--raw-typst <resolving-paths-correctly> -->
+## Resolving Paths Correctly
 
 Because of how Typst handles paths,
 elements like images will by default resolve
@@ -370,10 +370,7 @@ That said, Typst itself is well-sandboxed anyway.
 
 ### Typst is saying it can’t find my image – it’s looking inside `cmarker` for some reason!
 
-<!--typst-begin-exclude-->
 See [Resolving Paths Correctly](#resolving-paths-correctly).
-<!--typst-end-exclude-->
-<!--raw-typst See @resolving-paths-correctly. -->
 
 ### How do I include multiple Markdown files in one project?
 
