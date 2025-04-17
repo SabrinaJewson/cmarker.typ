@@ -238,7 +238,7 @@ one can override the `image` function in the scope the Typst code is evaluated.
 )
 ```
 
-## References, Labels and Citations
+## References, Labels, Figures and Citations
 
 `cmarker.typ` integrates well with Typst’s native references and labels.
 Where in Typst you would write `@foo`, in Markdown you write `[@foo]`;
@@ -261,6 +261,25 @@ they’ll be numbered sequentially in the fashion of GitHub Markdown:
 
 If you want to cite something from a bibliography,
 you can do it much the same way: `[@citation]`.
+
+If you want to customize the label of a heading from the default,
+you can use `id=` in HTML:
+
+```md
+<h1 id="my-nice-section">My nice heading</h1>
+
+See [@my-nice-section]. <!-- generates “See Section 1.” -->
+```
+
+This can also be used with figures, which is very powerful:
+
+```md
+Please refer to [@my-graph]. <!-- generates “Please refer to Figure 1.” -->
+
+<figure id="my-graph">
+
+![a graph](graph.png)</figure>
+```
 
 ## Supported Markdown Syntax
 

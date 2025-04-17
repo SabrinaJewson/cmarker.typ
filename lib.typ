@@ -56,16 +56,22 @@
     )
   }
 
+  let labelify(content, attrs) = if "id" in attrs { [#content #label(attrs.id)] } else { content }
+
+  let heading-fn(level) = (attrs, body) => {
+    labelify(scope.at("heading", default: heading)(level: h1-level + level, body), attrs)
+  }
+
   html = (
     sub: (attrs, body) => scope.at("sub", default: sub)(body),
     sup: (attrs, body) => scope.at("sup", default: super)(body),
     mark: (attrs, body) => scope.at("highlight", default: highlight)(body),
-    h1: (attrs, body) => scope.at("heading", default: heading)(level: h1-level + 0, body),
-    h2: (attrs, body) => scope.at("heading", default: heading)(level: h1-level + 1, body),
-    h3: (attrs, body) => scope.at("heading", default: heading)(level: h1-level + 2, body),
-    h4: (attrs, body) => scope.at("heading", default: heading)(level: h1-level + 3, body),
-    h5: (attrs, body) => scope.at("heading", default: heading)(level: h1-level + 4, body),
-    h6: (attrs, body) => scope.at("heading", default: heading)(level: h1-level + 5, body),
+    h1: heading-fn(0),
+    h2: heading-fn(1),
+    h3: heading-fn(2),
+    h4: heading-fn(3),
+    h5: heading-fn(4),
+    h6: heading-fn(5),
 
     li: (attrs, body) => tag-content(body, "<li>"),
     ul: (attrs, body) => {
@@ -136,7 +142,7 @@
     figure: (attrs, body) => {
       let (tagged: captions, rest) = take-tagged-children(body, "<figcaption>")
       let caption = if captions.len() >= 1 { captions.at(0).at(2) } else { none }
-      figure(caption: caption, rest)
+      labelify(figure(caption: caption, rest), attrs)
     },
 
     hr: ("void", (attrs) => (scope.rule)()),

@@ -13,3 +13,7 @@
 <h4>h4</h4>
 <h5>h5</h5>
 <h6>h6</h6>
+
+<h1 id="some-id">h</h1>
+
+[@some-id]
