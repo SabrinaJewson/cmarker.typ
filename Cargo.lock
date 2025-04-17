@@ -59,6 +59,7 @@ dependencies = [
  "memchr",
  "phf",
  "pulldown-cmark",
+ "typst-syntax",
  "unicode-ident",
 ]
 

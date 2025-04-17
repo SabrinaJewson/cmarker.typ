@@ -1344,7 +1344,11 @@ mod tests {
         render(s, &HashMap::new(), Options::empty(), 1)
     }
     fn render(s: &str, html_tags: &HtmlTags<'_>, options: Options, h1_level: u8) -> String {
-        String::from_utf8(super::run(s, html_tags, options, h1_level).unwrap()).unwrap()
+        let s = String::from_utf8(super::run(s, html_tags, options, h1_level).unwrap()).unwrap();
+        if let Some(e) = typst_syntax::parse(&s).errors().into_iter().next() {
+            panic!("{}", e.message);
+        }
+        s
     }
 
     #[test]

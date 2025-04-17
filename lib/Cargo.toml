@@ -19,3 +19,6 @@ pulldown-cmark.default-features = false
 pulldown-cmark.features = ["hashbrown"]
 phf = { version = "0.11.3", default-features = false }
 unicode-ident = "1.0.18"
+
+[dev-dependencies]
+typst-syntax = "0.13.1"
