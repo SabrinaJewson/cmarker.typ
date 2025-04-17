@@ -1,5 +1,7 @@
 #import "common.typ": run-cmarker
 
+#set heading(numbering: "1.")
+
 #show raw: it => {
   let attrs = (:)
   if it.lang != none {

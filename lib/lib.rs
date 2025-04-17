@@ -53,6 +53,8 @@ pub fn run(
         }
         result.extend_from_slice(b"]");
     };
+    let mut current_header_label = None::<Label>;
+    let mut label_tracker = LabelTracker::default();
     let mut farm = Farm::default();
 
     let mut parser = Unpeekable::new(pulldown_cmark::Parser::new_ext(markdown, markdown_options));
@@ -73,8 +75,20 @@ pub fn run(
                 let equal_signs = level as usize - 1 + usize::from(h1_level);
                 result.resize(result.len() + equal_signs, b'=');
                 result.push(b' ');
+
+                // Nested headings are impossible
+                assert!(current_header_label.is_none());
+
+                if equal_signs != 0 {
+                    current_header_label = Some(Label::default());
+                }
             }
-            E::End(TagEnd::Heading(_)) => result.extend_from_slice(b"\n"),
+            E::End(TagEnd::Heading(_)) => {
+                if let Some(label) = current_header_label.take() {
+                    label_tracker.write_to(label, &mut result);
+                }
+                result.extend_from_slice(b"\n");
+            }
 
             E::Start(Tag::BlockQuote(_)) => {
                 result.extend_from_slice(b"#quote(block:true)");
@@ -252,12 +266,21 @@ pub fn run(
 
             E::Start(Tag::HtmlBlock) | E::End(TagEnd::HtmlBlock) => {}
 
-            E::Text(text) => escape_text(text.as_bytes(), &mut result),
+            E::Text(text) => {
+                escape_text(text.as_bytes(), &mut result);
+                if let Some(label) = current_header_label.as_mut() {
+                    label.push(&text);
+                }
+            }
 
             E::Code(code) => {
                 result.extend_from_slice(b"#raw(block:false,\"");
                 escape_string(code.as_bytes(), &mut result);
                 result.extend_from_slice(b"\");");
+
+                if let Some(label) = current_header_label.as_mut() {
+                    label.push(&code);
+                }
             }
 
             E::Html(s) | E::InlineHtml(s) => {
@@ -270,6 +293,8 @@ pub fn run(
                     open_tags: open_tags.last_mut().unwrap(),
                     result: &mut result,
                     raw_typst: options.contains(Options::RAW_TYPST),
+                    // We don't need to pass in `current_header_label`, because text only occurs in
+                    // HTML inside HTML blocks, while headers only contain inline HTML.
                 };
                 parse_html(&mut cx);
             }
@@ -279,6 +304,10 @@ pub fn run(
                 result.extend_from_slice(b"#inlinemath(\"");
                 escape_string(s.as_bytes(), &mut result);
                 result.extend_from_slice(b"\");");
+
+                if let Some(label) = current_header_label.as_mut() {
+                    label.push(&s);
+                }
             }
 
             E::DisplayMath(s) => {
@@ -847,6 +876,63 @@ fn escape_text(text: &[u8], result: &mut Vec<u8>) {
     }
 }
 
+#[derive(Default)]
+struct LabelTracker(HashMap<Label, u64>);
+
+impl LabelTracker {
+    fn write_to(&mut self, mut label: Label, result: &mut Vec<u8>) {
+        if label.0.is_empty() {
+            return;
+        }
+        result.extend_from_slice(b" <");
+        result.extend_from_slice(label.0.as_bytes());
+        match self.0.get(&label) {
+            // Don't use `.entry_ref` + `.insert` because that requires cloning. We can't use
+            // `.entry` because that unconditionally drops the label in the `Occupied` case.
+            None => _ = self.0.insert(label, 0),
+            Some(&(mut n)) => {
+                let original_len = label.0.len();
+                loop {
+                    n += 1;
+                    label.0.push('-');
+                    label.0.push_str(itoa::Buffer::new().format(n));
+                    let collides = self.0.contains_key(&label);
+                    label.0.truncate(original_len);
+                    if !collides {
+                        break;
+                    }
+                }
+                *self.0.get_mut(&label).unwrap() = n;
+                result.push(b'-');
+                result.extend_from_slice(itoa::Buffer::new().format(n).as_bytes());
+            }
+        }
+        result.push(b'>');
+    }
+}
+
+#[derive(Default, PartialEq, Eq, Hash)]
+struct Label(String);
+
+impl Label {
+    fn push(&mut self, s: &str) {
+        // We follow an algorithm similar to GitHub’s[1]. In particular:
+        // + We strip out invalid characters (instead of GitHub’s disallowed list, we keep just
+        //   characters allowed in Typst labels, and additionally removing `:` and `.`).
+        // + We convert everything to lowercase.
+        // + We replace ASCII spaces (but no other whitespace) to hyphens.
+        //
+        // [1]: https://github.com/Flet/github-slugger
+        for c in s.chars() {
+            if is_xid_continue(c) || matches!(c, '_' | '-') {
+                self.0.extend(c.to_lowercase());
+            } else if c == ' ' {
+                self.0.push('-');
+            }
+        }
+    }
+}
+
 mod farm;
 use farm::Farm;
 
@@ -855,16 +941,45 @@ mod tests {
     #[test]
     fn heading() {
         assert_eq!(with_h1_level("# H", 0), "\n H\n");
-        assert_eq!(with_h1_level("## H", 0), "\n= H\n");
-        assert_eq!(with_h1_level("### H", 0), "\n== H\n");
-        assert_eq!(with_h1_level("# H", 1), "\n= H\n");
-        assert_eq!(with_h1_level("## H", 1), "\n== H\n");
-        assert_eq!(with_h1_level("### H", 1), "\n=== H\n");
-        assert_eq!(with_h1_level("###### H", 1), "\n====== H\n");
-        assert_eq!(with_h1_level("# H", 3), "\n=== H\n");
-        assert_eq!(with_h1_level("###### H", 4), "\n========= H\n");
-        assert_eq!(with_h1_level("H\n=", 1), "\n= H\n");
-        assert_eq!(with_h1_level("H\n-", 1), "\n== H\n");
+        assert_eq!(with_h1_level("## H", 0), "\n= H <h>\n");
+        assert_eq!(with_h1_level("### H", 0), "\n== H <h>\n");
+        assert_eq!(with_h1_level("# H", 1), "\n= H <h>\n");
+        assert_eq!(with_h1_level("## H", 1), "\n== H <h>\n");
+        assert_eq!(with_h1_level("### H", 1), "\n=== H <h>\n");
+        assert_eq!(with_h1_level("###### H", 1), "\n====== H <h>\n");
+        assert_eq!(with_h1_level("# H", 3), "\n=== H <h>\n");
+        assert_eq!(with_h1_level("###### H", 4), "\n========= H <h>\n");
+        assert_eq!(with_h1_level("H\n=", 1), "\n= H <h>\n");
+        assert_eq!(with_h1_level("H\n-", 1), "\n== H <h>\n");
+    }
+
+    #[test]
+    fn heading_labels() {
+        assert_eq!(render_("# α 三"), "\n= α 三 <α-三>\n");
+        assert_eq!(render_("# _:-.-"), "\n= \\_:\\-.\\- <_-->\n");
+        assert_eq!(render_("# a`b`c"), "\n= a#raw(block:false,\"b\");c <abc>\n");
+        assert_eq!(render_("# a<s>b</s>c"), "\n= abc <abc>\n");
+        assert_eq!(
+            with_math("# a$b + 1$c"),
+            "\n= a#inlinemath(\"b + 1\");c <ab--1c>\n"
+        );
+        assert_eq!(render_("# a\n# a"), "\n= a <a>\n\n= a <a-1>\n");
+        assert_eq!(
+            render_("# a\n# a\n# a"),
+            "\n= a <a>\n\n= a <a-1>\n\n= a <a-2>\n"
+        );
+        assert_eq!(
+            render_("# a\n# a-1\n# a"),
+            "\n= a <a>\n\n= a\\-1 <a-1>\n\n= a <a-2>\n"
+        );
+        assert_eq!(
+            render_("# a-2\n# a\n# a\n# a"),
+            "\n= a\\-2 <a-2>\n\n= a <a>\n\n= a <a-1>\n\n= a <a-3>\n",
+        );
+        assert_eq!(
+            render_("# a-1\n# a\n# a\n# a-1"),
+            "\n= a\\-1 <a-1>\n\n= a <a>\n\n= a <a-2>\n\n= a\\-1 <a-1-1>\n"
+        );
     }
 
     #[test]
@@ -1275,3 +1390,4 @@ use memchr::memchr2;
 use memchr::memmem;
 use pulldown_cmark::Alignment;
 use pulldown_cmark::CowStr;
+use unicode_ident::is_xid_continue;
