@@ -197,9 +197,17 @@ pub fn run(
                 title: _,
                 id: _,
             }) => {
-                result.extend_from_slice(b"#link(\"");
-                escape_string(dest_url.as_bytes(), &mut result);
-                result.extend_from_slice(b"\")");
+                result.extend_from_slice(b"#link(");
+                if let Some(label) = dest_url.strip_prefix("#") {
+                    result.extend_from_slice(b"label(\"");
+                    escape_string(label.as_bytes(), &mut result);
+                    result.extend_from_slice(b"\")");
+                } else {
+                    result.extend_from_slice(b"\"");
+                    escape_string(dest_url.as_bytes(), &mut result);
+                    result.extend_from_slice(b"\"");
+                }
+                result.extend_from_slice(b")");
                 start_scope(&mut open_tags, &mut result);
             }
             E::End(TagEnd::Link) => {
@@ -924,13 +932,17 @@ impl Label {
         //
         // [1]: https://github.com/Flet/github-slugger
         for c in s.chars() {
-            if is_xid_continue(c) || matches!(c, '_' | '-') {
+            if is_id_continue(c) {
                 self.0.extend(c.to_lowercase());
             } else if c == ' ' {
                 self.0.push('-');
             }
         }
     }
+}
+
+fn is_id_continue(c: char) -> bool {
+    is_xid_continue(c) || matches!(c, '_' | '-')
 }
 
 mod farm;
@@ -1019,6 +1031,7 @@ mod tests {
             render_("![a![*b*]()`c`<p>  \nd\ne]()\n"),
             "#image(\"\",alt:\"abc<p> d e\");\n\n"
         );
+        assert_eq!(render_("[x](#r)"), "#link(label(\"r\"))[x];\n\n");
     }
 
     #[test]

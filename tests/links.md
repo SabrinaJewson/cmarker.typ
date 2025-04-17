@@ -9,3 +9,5 @@ We can also use links with text: [example.org](https://example.org).
 A content with a label <!--raw-typst <foo> -->
 
 <a href="#foo">Link to the content</a>
+
+[Link to the content](#foo)
