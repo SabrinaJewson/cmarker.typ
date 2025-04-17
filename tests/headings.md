@@ -5,7 +5,7 @@
 ##### Heading 5
 ###### Heading 6
 
-<!--raw-typst @heading-2-->
+[@heading-2]
 
 <h1>h1</h1>
 <h2>h2</h2>

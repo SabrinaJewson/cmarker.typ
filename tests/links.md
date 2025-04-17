@@ -11,3 +11,9 @@ A content with a label <!--raw-typst <foo> -->
 <a href="#foo">Link to the content</a>
 
 [Link to the content](#foo)
+
+# A heading
+
+[@a-heading]
+
+[Chapter][@a-heading]

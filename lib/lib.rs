@@ -57,7 +57,12 @@ pub fn run(
     let mut label_tracker = LabelTracker::default();
     let mut farm = Farm::default();
 
-    let mut parser = Unpeekable::new(pulldown_cmark::Parser::new_ext(markdown, markdown_options));
+    let mut parser = Unpeekable::new(pulldown_cmark::Parser::new_with_broken_link_callback(
+        markdown,
+        markdown_options,
+        Some(BrokenLinkCallback),
+    ));
+
     while let (Some(event), _) = parser.next() {
         use pulldown_cmark::CodeBlockKind;
         use pulldown_cmark::{Event as E, Tag, TagEnd};
@@ -191,6 +196,36 @@ pub fn run(
                 result.push(b';');
             }
 
+            E::Start(Tag::Link {
+                link_type:
+                    pulldown_cmark::LinkType::CollapsedUnknown
+                    | pulldown_cmark::LinkType::ShortcutUnknown,
+                dest_url,
+                title: _,
+                id: _,
+            }) => {
+                eat_until_end(&mut parser);
+
+                let label = dest_url.strip_prefix("@").unwrap();
+                result.extend_from_slice(b"#ref(label(\"");
+                escape_string(label.as_bytes(), &mut result);
+                result.extend_from_slice(b"\"));");
+            }
+
+            E::Start(Tag::Link {
+                link_type: pulldown_cmark::LinkType::ReferenceUnknown,
+                dest_url,
+                title: _,
+                id: _,
+            }) => {
+                let label = dest_url.strip_prefix("@").unwrap();
+                // Since we don't get whether it's a broken link on `TagEnd`, we use an IIFE to
+                // allow the ending syntax to be the same for both @ and regular links.
+                result.extend_from_slice(b"#(s=>ref(label(\"");
+                escape_string(label.as_bytes(), &mut result);
+                result.extend_from_slice(b"\"),supplement:s))");
+                start_scope(&mut open_tags, &mut result);
+            }
             E::Start(Tag::Link {
                 link_type: _,
                 dest_url,
@@ -348,10 +383,24 @@ pub fn run(
     Ok(result)
 }
 
+struct BrokenLinkCallback;
+
+impl<'input> pulldown_cmark::BrokenLinkCallback<'input> for BrokenLinkCallback {
+    fn handle_broken_link(
+        &mut self,
+        link: pulldown_cmark::BrokenLink<'input>,
+    ) -> Option<(CowStr<'input>, CowStr<'input>)> {
+        if link.reference.starts_with("@") {
+            return Some((link.reference, CowStr::from("")));
+        }
+        None
+    }
+}
+
 struct HtmlContext<'a, 'input> {
     farm: &'a Farm,
     html: &'a [u8],
-    parser: &'a mut Unpeekable<pulldown_cmark::Parser<'input>>,
+    parser: &'a mut Unpeekable<pulldown_cmark::Parser<'input, BrokenLinkCallback>>,
     tags: &'a HtmlTags<'input>,
     open_tags: &'a mut Vec<CaseInsensitive<&'input [u8]>>,
     result: &'a mut Vec<u8>,
@@ -559,16 +608,7 @@ fn html_comment(cx: &mut HtmlContext<'_, '_>) -> Option<()> {
                 E::Html(s) | E::InlineHtml(s) => cx.html = cx.farm.add(s).as_bytes(),
                 E::Start(Tag::HtmlBlock | Tag::Paragraph)
                 | E::End(TagEnd::HtmlBlock | TagEnd::Paragraph) => {}
-                E::Start(_) => {
-                    let mut layers = 1_u32;
-                    while layers != 0 {
-                        match cx.parser.next().0.unwrap() {
-                            E::Start(_) => layers += 1,
-                            E::End(_) => layers -= 1,
-                            _ => {}
-                        }
-                    }
-                }
+                E::Start(_) => eat_until_end(cx.parser),
                 E::End(_) => {
                     unpeeker.unpeek(Some(event));
                     break;
@@ -626,6 +666,18 @@ impl<'input> HtmlContext<'_, 'input> {
                 unpeeker.unpeek(other);
                 None
             }
+        }
+    }
+}
+
+fn eat_until_end(parser: &mut Unpeekable<pulldown_cmark::Parser<'_, BrokenLinkCallback>>) {
+    let mut layers = 1_u32;
+    while layers != 0 {
+        use pulldown_cmark::Event as E;
+        match parser.next().0.unwrap() {
+            E::Start(_) => layers += 1,
+            E::End(_) => layers -= 1,
+            _ => {}
         }
     }
 }
@@ -1032,6 +1084,19 @@ mod tests {
             "#image(\"\",alt:\"abc<p> d e\");\n\n"
         );
         assert_eq!(render_("[x](#r)"), "#link(label(\"r\"))[x];\n\n");
+    }
+
+    #[test]
+    fn ref_links() {
+        // Normal broken links still work as expected.
+        assert_eq!(render_("[foo]"), "\\[foo\\]\n\n");
+
+        assert_eq!(render_("[@foo]"), "#ref(label(\"foo\"));\n\n");
+        assert_eq!(render_("[@foo][]"), "#ref(label(\"foo\"));\n\n");
+        assert_eq!(
+            render_("[_sup_][@foo]"),
+            "#(s=>ref(label(\"foo\"),supplement:s))[#emph[sup];];\n\n"
+        );
     }
 
     #[test]

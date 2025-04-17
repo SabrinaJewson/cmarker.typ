@@ -238,6 +238,30 @@ one can override the `image` function in the scope the Typst code is evaluated.
 )
 ```
 
+## References, Labels and Citations
+
+`cmarker.typ` integrates well with Typst’s native references and labels.
+Where in Typst you would write `@foo`, in Markdown you write `[@foo]`;
+where in Typst you would write `@foo[Chapter]`, in Markdown you’d write `[Chapter][@foo]`.
+You can also write `[some text](#foo)` to have “some text” be a link that points at `foo`.
+Headings are automatically given references according to their name,
+but lowercased and with spaces replaced by hyphens:
+
+```md
+# My nice heading
+
+We can make a link to [this section](#my-nice-heading).
+We can refer you to [@my-nice-heading]. <!-- generates “We can refer you to Section 1.” -->
+Or to [Chapter][@my-nice-heading]. <!-- generates “We can refer you to Chapter 1.” -->
+```
+
+If you have two headings with the same title,
+they’ll be numbered sequentially in the fashion of GitHub Markdown:
+`heading`, `heading-1`, `heading-2`, etc.
+
+If you want to cite something from a bibliography,
+you can do it much the same way: `[@citation]`.
+
 ## Supported Markdown Syntax
 
 We support CommonMark with a couple extensions.
