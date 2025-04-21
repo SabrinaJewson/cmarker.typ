@@ -419,6 +419,13 @@ See [Resolving Paths Correctly](#resolving-paths-correctly).
 
 See [the multi-file example](https://github.com/SabrinaJewson/cmarker.typ/blob/main/examples/multi-file.typ).
 
+Note that this example uses a _single_ call to `render` with concatenated Markdown,
+i.e. `cmarker.render(read("file-a.md") + read("file-b.md"))`.
+While using `cmarker.render(read("file-a.md"))` followed by `cmarker.render(read("file-b.md"))`
+also works, you may encounter collision issues if two headings have the same name.
+This can alternatively be solved by giving the headings an explicit ID:
+`<h1 id="my-id">My Heading</h1>` instead of `# My Heading`.
+
 ### My image file contains spaces, but it gets rendered as text!
 
 This is a Markdown quirk – `![alt](image path.png)` is seen as plain text
