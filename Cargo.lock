@@ -54,6 +54,7 @@ name = "cmarker-typst"
 version = "0.0.0"
 dependencies = [
  "bitflags",
+ "foldhash",
  "hashbrown",
  "itoa",
  "memchr",
@@ -137,9 +138,9 @@ checksum = "37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be"
 
 [[package]]
 name = "foldhash"
-version = "0.1.4"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0d2fde1f7b3d48b8395d5f2de76c18a528bd6a9cdde438df747bfcba3e05d6f"
+checksum = "d9c4f5dac5e15c24eb999c26181a6ca40b39fe946cbe4c263c7209467bc83af2"
 
 [[package]]
 name = "generate-entities"
@@ -300,6 +301,7 @@ version = "0.0.0"
 dependencies = [
  "cmarker-typst",
  "dlmalloc",
+ "memchr",
  "wasm-minimal-protocol",
 ]
 

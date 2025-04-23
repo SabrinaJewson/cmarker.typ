@@ -6,6 +6,8 @@
   h1-level: 1,
   raw-typst: true,
   html: (:),
+  label-prefix: "",
+  prefix-label-uses: true,
   scope: (:),
   show-source: false,
   blockquote: none,
@@ -56,7 +58,15 @@
     )
   }
 
-  let labelify(content, attrs) = if "id" in attrs { [#content #label(attrs.id)] } else { content }
+  let labelify(content, attrs) = {
+    if "id" in attrs {
+      [#content #label(label-prefix + attrs.id)]
+    } else {
+      content
+    }
+  }
+
+  let label-use-prefix = if prefix-label-uses { label-prefix } else { "" }
 
   let heading-fn(level) = (attrs, body) => {
     labelify(scope.at("heading", default: heading)(level: h1-level + level, body), attrs)
@@ -147,7 +157,11 @@
 
     hr: ("void", (attrs) => (scope.rule)()),
     a: (attrs, body) => scope.at("link", default: link)(
-      if attrs.href.starts-with("#") { label(attrs.href.slice(1)) } else { attrs.href },
+      if attrs.href.starts-with("#") {
+        label(label-use-prefix + attrs.href.slice(1))
+      } else {
+        attrs.href
+      },
       body,
     ),
     em: (attrs, body) => scope.at("emph", default: emph)(body),
@@ -161,27 +175,28 @@
     ..html,
   )
 
-  let options = 0
+  let flags = 0
   if smart-punctuation {
-    options += 0b00000001
+    flags += 0b00000001
   }
   if raw-typst {
-    options += 0b00000010
+    flags += 0b00000010
   }
   if math != none {
-    options += 0b00000100
+    flags += 0b00000100
     scope += (inlinemath: math.with(block: false), displaymath: math.with(block: true))
   }
 
-  let options-bytes = (options, h1-level)
+  let options-bytes = (flags, h1-level)
+
+  options-bytes += array(bytes(label-prefix)) + (0xFF,)
+  options-bytes += array(bytes(label-use-prefix)) + (0xFF,)
 
   scope.html = (:)
   for (tag-name, value) in html {
     let (kind, callback) = if type(value) == function { ("normal", value) } else { value };
     scope.html.insert(tag-name, callback)
-    for byte in bytes(tag-name) {
-      options-bytes.push(byte)
-    }
+    options-bytes += array(bytes(tag-name))
     options-bytes.push(if kind == "void" {
       0xFC
     } else if kind == "raw-text" {

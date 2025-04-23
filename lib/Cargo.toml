@@ -9,6 +9,7 @@ path = "lib.rs"
 
 [dependencies]
 bitflags = "2.4.1"
+foldhash = { version = "0.1.5", default-features = false }
 hashbrown = "0.15.2"
 itoa = "1.0.9"
 memchr = { version = "2.7.4", default-features = false }

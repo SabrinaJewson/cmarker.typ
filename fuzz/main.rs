@@ -1,6 +1,6 @@
 #![no_main]
 
-static HTML_TAGS: LazyLock<HtmlTags<'static>> = LazyLock::new(|| {
+static HTML_TAGS: LazyLock<HtmlTagMap<'static>> = LazyLock::new(|| {
     [
         ("sub", HtmlTagKind::Normal),
         ("li", HtmlTagKind::Normal),
@@ -19,8 +19,14 @@ fuzz_target!(|markdown: &str| {
         return;
     }
 
-    let options = Options::SMART_PUNCTUATION | Options::MATH;
-    let text = cmarker_typst::run(markdown, &HTML_TAGS, options, 1).unwrap();
+    let options = cmarker_typst::Options {
+        html_tags: &*HTML_TAGS,
+        label_prefix: LabelPrefix::new("").unwrap(),
+        label_use_prefix: LabelPrefix::new("").unwrap(),
+        flags: Flags::SMART_PUNCTUATION | Flags::MATH,
+        h1_level: 1,
+    };
+    let text = cmarker_typst::run(markdown, options).unwrap();
     let text = String::from_utf8(text).unwrap();
     if let Some(error) = typst_syntax::parse(&text).errors().into_iter().next() {
         panic!("{}", error.message);
@@ -28,8 +34,9 @@ fuzz_target!(|markdown: &str| {
 });
 
 use cmarker_typst::CaseInsensitive;
+use cmarker_typst::Flags;
 use cmarker_typst::HtmlTagKind;
-use cmarker_typst::HtmlTags;
-use cmarker_typst::Options;
+use cmarker_typst::HtmlTagMap;
+use cmarker_typst::LabelPrefix;
 use libfuzzer_sys::fuzz_target;
 use std::sync::LazyLock;

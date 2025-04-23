@@ -7,6 +7,8 @@
   h1-level: 1,
   raw-typst: true,
   html: (:),
+  label-prefix: "",
+  prefix-label-uses: true,
   scope: (:),
   blockquote: none,
 ) = {
@@ -17,6 +19,8 @@
     h1-level: h1-level,
     raw-typst: raw-typst,
     html: html,
+    label-prefix: label-prefix,
+    prefix-label-uses: prefix-label-uses,
     scope: scope,
     blockquote: blockquote,
   )

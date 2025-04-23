@@ -18,3 +18,4 @@ cmarker-typst = { path = "../lib" }
 wasm-minimal-protocol.git = "https://github.com/SabrinaJewson/wasm-minimal-protocol.rs"
 wasm-minimal-protocol.rev = "992f87bfb3f912742ea85d8efd29db2452c09202"
 dlmalloc = { version = "0.2.8", features = ["global"] }
+memchr = { version = "2.7.4", default-features = false }
