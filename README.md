@@ -476,6 +476,33 @@ or insert two newlines after the opening tag:
 hello _world_</p>
 ```
 
+### How do I centre tables? How do I have them span the page width?
+
+This can be achieved via [show rules](https://typst.app/docs/reference/styling/#show-rules).
+For example, centring:
+
+```typst
+#show table: t => align(center, t)
+#cmarker.render("
+  | a | b |
+  | - | - |
+  | c | d |
+")
+```
+
+And having them span the page width:
+
+```typst
+#show table: t => {
+  if t.columns.all(c => c == auto) {
+    table(columns: (1fr,) * t.columns.len(), align: t.align, ..t.children)
+  } else {
+    t
+  }
+}
+```
+
+
 ## Development
 
 - Build the plugin with `./build.sh`,
