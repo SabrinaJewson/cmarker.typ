@@ -412,6 +412,11 @@ pub fn run<H: HtmlTags>(markdown: &str, options: Options<'_, H>) -> Result<Vec<u
         }
     }
 
+    // To allow using cmarker inline, we (rather crudely) remove paragraph breaks from the end.
+    while result.ends_with(b"\n") {
+        result.pop();
+    }
+
     for _ in open_tags.pop().unwrap() {
         result.extend_from_slice(b"]");
     }
@@ -1044,178 +1049,181 @@ use farm::Farm;
 mod tests {
     #[test]
     fn heading() {
-        assert_eq!(with_h1_level("# H", 0), "\n H\n");
-        assert_eq!(with_h1_level("## H", 0), "\n= H <h>\n");
-        assert_eq!(with_h1_level("### H", 0), "\n== H <h>\n");
-        assert_eq!(with_h1_level("# H", 1), "\n= H <h>\n");
-        assert_eq!(with_h1_level("## H", 1), "\n== H <h>\n");
-        assert_eq!(with_h1_level("### H", 1), "\n=== H <h>\n");
-        assert_eq!(with_h1_level("###### H", 1), "\n====== H <h>\n");
-        assert_eq!(with_h1_level("# H", 3), "\n=== H <h>\n");
-        assert_eq!(with_h1_level("###### H", 4), "\n========= H <h>\n");
-        assert_eq!(with_h1_level("H\n=", 1), "\n= H <h>\n");
-        assert_eq!(with_h1_level("H\n-", 1), "\n== H <h>\n");
+        assert_eq!(with_h1_level("# H", 0), "\n H");
+        assert_eq!(with_h1_level("## H", 0), "\n= H <h>");
+        assert_eq!(with_h1_level("### H", 0), "\n== H <h>");
+        assert_eq!(with_h1_level("# H", 1), "\n= H <h>");
+        assert_eq!(with_h1_level("## H", 1), "\n== H <h>");
+        assert_eq!(with_h1_level("### H", 1), "\n=== H <h>");
+        assert_eq!(with_h1_level("###### H", 1), "\n====== H <h>");
+        assert_eq!(with_h1_level("# H", 3), "\n=== H <h>");
+        assert_eq!(with_h1_level("###### H", 4), "\n========= H <h>");
+        assert_eq!(with_h1_level("H\n=", 1), "\n= H <h>");
+        assert_eq!(with_h1_level("H\n-", 1), "\n== H <h>");
+        assert_eq!(with_h1_level("# H\n_", 1), "\n= H <h>\n\\_");
     }
 
     #[test]
     fn heading_labels() {
-        assert_eq!(render("# α 三"), "\n= α 三 <α-三>\n");
-        assert_eq!(render("# _:-.-"), "\n= \\_:\\-.\\- <_-->\n");
-        assert_eq!(render("# a`b`c"), "\n= a#raw(block:false,\"b\");c <abc>\n");
-        assert_eq!(render("# a<s>b</s>c"), "\n= abc <abc>\n");
+        assert_eq!(render("# α 三"), "\n= α 三 <α-三>");
+        assert_eq!(render("# _:-.-"), "\n= \\_:\\-.\\- <_-->");
+        assert_eq!(render("# a`b`c"), "\n= a#raw(block:false,\"b\");c <abc>");
+        assert_eq!(render("# a<s>b</s>c"), "\n= abc <abc>");
         assert_eq!(
             with_math("# a$b + 1$c"),
-            "\n= a#inlinemath(\"b + 1\");c <ab--1c>\n"
+            "\n= a#inlinemath(\"b + 1\");c <ab--1c>"
         );
-        assert_eq!(render("# a\n# a"), "\n= a <a>\n\n= a <a-1>\n");
+        assert_eq!(render("# a\n# a"), "\n= a <a>\n\n= a <a-1>");
         assert_eq!(
             render("# a\n# a\n# a"),
-            "\n= a <a>\n\n= a <a-1>\n\n= a <a-2>\n"
+            "\n= a <a>\n\n= a <a-1>\n\n= a <a-2>"
         );
         assert_eq!(
             render("# a\n# a-1\n# a"),
-            "\n= a <a>\n\n= a\\-1 <a-1>\n\n= a <a-2>\n"
+            "\n= a <a>\n\n= a\\-1 <a-1>\n\n= a <a-2>"
         );
         assert_eq!(
             render("# a-2\n# a\n# a\n# a"),
-            "\n= a\\-2 <a-2>\n\n= a <a>\n\n= a <a-1>\n\n= a <a-3>\n",
+            "\n= a\\-2 <a-2>\n\n= a <a>\n\n= a <a-1>\n\n= a <a-3>",
         );
         assert_eq!(
             render("# a-1\n# a\n# a\n# a-1"),
-            "\n= a\\-1 <a-1>\n\n= a <a>\n\n= a <a-2>\n\n= a\\-1 <a-1-1>\n"
+            "\n= a\\-1 <a-1>\n\n= a <a>\n\n= a <a-2>\n\n= a\\-1 <a-1-1>"
         );
     }
 
     #[test]
     fn lines() {
-        assert_eq!(render("a\nb"), "a b\n\n");
-        assert_eq!(render("a \nb"), "a b\n\n");
-        assert_eq!(render("a  \nb"), "a\\ b\n\n");
-        assert_eq!(render("a\n\nb"), "a\n\nb\n\n");
+        assert_eq!(render("a\nb"), "a b");
+        assert_eq!(render("a \nb"), "a b");
+        assert_eq!(render("a  \nb"), "a\\ b");
+        assert_eq!(render("a\n\nb"), "a\n\nb");
     }
 
     #[test]
     fn styling() {
-        assert_eq!(render("*i* _i_"), "#emph[i]; #emph[i];\n\n");
-        assert_eq!(render("**b** __b__"), "#strong[b]; #strong[b];\n\n");
-        assert_eq!(render("~s~"), "#strike[s];\n\n");
+        assert_eq!(render("*i* _i_"), "#emph[i]; #emph[i];");
+        assert_eq!(render("**b** __b__"), "#strong[b]; #strong[b];");
+        assert_eq!(render("~s~"), "#strike[s];");
     }
 
     #[test]
     fn links_images() {
         assert_eq!(
             render("<https://example.org/\">"),
-            "#link(\"https://example.org/\\\"\")[#(\"https://\");example.org\\/\\\"];\n\n"
+            "#link(\"https://example.org/\\\"\")[#(\"https://\");example.org\\/\\\"];"
         );
         assert_eq!(
             render("[a](https://example.org)"),
-            "#link(\"https://example.org\")[a];\n\n"
+            "#link(\"https://example.org\")[a];"
         );
         assert_eq!(
             render("[a][a]\n\n[a]: https://example.org"),
-            "#link(\"https://example.org\")[a];\n\n"
+            "#link(\"https://example.org\")[a];"
         );
         assert_eq!(
             render("![alt text](https://example.org/)"),
-            "#image(\"https://example.org/\",alt:\"alt text\");\n\n",
+            "#image(\"https://example.org/\",alt:\"alt text\");",
         );
         assert_eq!(
             render("![a![*b*]()`c`<p>  \nd\ne]()\n"),
-            "#image(\"\",alt:\"abc<p> d e\");\n\n"
+            "#image(\"\",alt:\"abc<p> d e\");"
         );
-        assert_eq!(render("[x](#r)"), "#link(label(\"r\"))[x];\n\n");
+        assert_eq!(render("[x](#r)"), "#link(label(\"r\"))[x];");
     }
 
     #[test]
     fn ref_links() {
         // Normal broken links still work as expected.
-        assert_eq!(render("[foo]"), "\\[foo\\]\n\n");
+        assert_eq!(render("[foo]"), "\\[foo\\]");
 
-        assert_eq!(render("[@foo]"), "#ref(label(\"foo\"));\n\n");
-        assert_eq!(render("[@foo][]"), "#ref(label(\"foo\"));\n\n");
+        assert_eq!(render("[@foo]"), "#ref(label(\"foo\"));");
+        assert_eq!(render("[@foo][]"), "#ref(label(\"foo\"));");
         assert_eq!(
             render("[_sup_][@foo]"),
-            "#(s=>ref(label(\"foo\"),supplement:s))[#emph[sup];];\n\n"
+            "#(s=>ref(label(\"foo\"),supplement:s))[#emph[sup];];"
         );
     }
 
     #[test]
     fn code() {
-        assert_eq!(render("\tlet x = 5;"), "#raw(block:true,\"let x = 5;\")\n");
+        assert_eq!(render("\tlet x = 5;"), "#raw(block:true,\"let x = 5;\")");
         assert_eq!(
             render("```\nlet x = 5;\n```"),
-            "#raw(block:true,\"let x = 5;\n\")\n"
+            "#raw(block:true,\"let x = 5;\n\")"
         );
         assert_eq!(
             render("```rust\nlet x = 5;\n```"),
-            "#raw(block:true,lang:\"rust\",\"let x = 5;\n\")\n"
+            "#raw(block:true,lang:\"rust\",\"let x = 5;\n\")"
         );
         assert_eq!(
             render("some`inline code`…"),
-            "some#raw(block:false,\"inline code\");…\n\n"
+            "some#raw(block:false,\"inline code\");…"
         );
+        assert_eq!(render("```\n_\n```\n_"), "#raw(block:true,\"_\n\")\n\\_");
     }
 
     #[test]
     fn horiz() {
-        assert_eq!(render("---\n"), "#rule()\n",);
+        assert_eq!(render("---\n"), "#rule()");
+        assert_eq!(render("---\n_"), "#rule()\n\\_");
     }
 
     #[test]
     fn lists() {
-        assert_eq!(render("- a\n- b\n- c"), "#list([a],[b],[c],)\n");
-        assert_eq!(render("+ a\n+ b\n+ c"), "#list([a],[b],[c],)\n");
-        assert_eq!(render("1. a\n1. b\n1. c"), "#enum(start:1,[a],[b],[c],)\n");
-        assert_eq!(render("5. a\n1. b\n1. c"), "#enum(start:5,[a],[b],[c],)\n");
-        assert_eq!(render("- a\n\n\tb\n\nc"), "#list([a\n\nb\n\n],)\nc\n\n");
+        assert_eq!(render("- a\n- b\n- c"), "#list([a],[b],[c],)");
+        assert_eq!(render("+ a\n+ b\n+ c"), "#list([a],[b],[c],)");
+        assert_eq!(render("1. a\n1. b\n1. c"), "#enum(start:1,[a],[b],[c],)");
+        assert_eq!(render("5. a\n1. b\n1. c"), "#enum(start:5,[a],[b],[c],)");
+        assert_eq!(render("- a\n\n\tb\n\nc"), "#list([a\n\nb\n\n],)\nc");
     }
 
     #[test]
     fn footnote() {
         assert_eq!(
             render("a [^1].\n\n[^1]: b\n\nc"),
-            "a #ref(label(\"1\"));.\n\n#[#show super:s=>none;#let l=\"1\";#footnote[b\n\n]#label(l)];c\n\n"
+            "a #ref(label(\"1\"));.\n\n#[#show super:s=>none;#let l=\"1\";#footnote[b\n\n]#label(l)];c"
         );
     }
 
     #[test]
     fn escaping() {
-        assert_eq!(render("\\*a\\*"), "\\*a\\*\n\n");
-        assert_eq!(render("\\_a\\_"), "\\_a\\_\n\n");
-        assert_eq!(render("\\`a\\`"), "\\`a\\`\n\n");
+        assert_eq!(render("\\*a\\*"), "\\*a\\*");
+        assert_eq!(render("\\_a\\_"), "\\_a\\_");
+        assert_eq!(render("\\`a\\`"), "\\`a\\`");
     }
 
     #[test]
     fn smart_punct() {
-        assert_eq!(with_smart_punct("\"x\""), "“x”\n\n");
-        assert_eq!(with_smart_punct("\\\"x\\\""), "\\\"x\\\"\n\n");
-        assert_eq!(render("\"x\""), "\\\"x\\\"\n\n");
-        assert_eq!(render("--;---"), "\\-\\-;\\-\\-\\-\n\n");
-        assert_eq!(with_smart_punct("--;---"), "–;—\n\n");
-        assert_eq!(with_smart_punct("\\--;\\-\\--"), "\\-\\-;\\-\\-\\-\n\n");
+        assert_eq!(with_smart_punct("\"x\""), "“x”");
+        assert_eq!(with_smart_punct("\\\"x\\\""), "\\\"x\\\"");
+        assert_eq!(render("\"x\""), "\\\"x\\\"");
+        assert_eq!(render("--;---"), "\\-\\-;\\-\\-\\-");
+        assert_eq!(with_smart_punct("--;---"), "–;—");
+        assert_eq!(with_smart_punct("\\--;\\-\\--"), "\\-\\-;\\-\\-\\-");
     }
 
     #[test]
     fn blockquote() {
-        assert_eq!(render("> *q*"), "#quote(block:true)[#emph[q];\n\n]\n\n");
+        assert_eq!(render("> *q*"), "#quote(block:true)[#emph[q];\n\n]");
         assert_eq!(
             render("> Quoted\n> > Nested"),
-            "#quote(block:true)[Quoted\n\n#quote(block:true)[Nested\n\n]\n\n]\n\n"
+            "#quote(block:true)[Quoted\n\n#quote(block:true)[Nested\n\n]\n\n]"
         );
     }
 
     #[test]
     fn math() {
-        assert_eq!(with_math("$x$"), "#inlinemath(\"x\");\n\n");
+        assert_eq!(with_math("$x$"), "#inlinemath(\"x\");");
         assert_eq!(
             with_math("$\\alpha + \\beta$"),
-            "#inlinemath(\"\\\\alpha + \\\\beta\");\n\n"
+            "#inlinemath(\"\\\\alpha + \\\\beta\");"
         );
-        assert_eq!(with_math("$$x$$"), "#displaymath(\"x\");\n\n");
-        assert_eq!(with_math("a$x$b"), "a#inlinemath(\"x\");b\n\n");
-        assert_eq!(render("a$x$b"), "a\\$x\\$b\n\n");
-        assert_eq!(render("a$$x$$b"), "a\\$\\$x\\$\\$b\n\n");
-        assert_eq!(with_math("$$\nx\n$$"), "#displaymath(\"\nx\n\");\n\n");
+        assert_eq!(with_math("$$x$$"), "#displaymath(\"x\");");
+        assert_eq!(with_math("a$x$b"), "a#inlinemath(\"x\");b");
+        assert_eq!(render("a$x$b"), "a\\$x\\$b");
+        assert_eq!(render("a$$x$$b"), "a\\$\\$x\\$\\$b");
+        assert_eq!(with_math("$$\nx\n$$"), "#displaymath(\"\nx\n\");");
     }
 
     #[test]
@@ -1226,18 +1234,18 @@ mod tests {
         );
         assert_eq!(
             render("a<!--typst-begin-exclude-->b\nc\nd<!--typst-end-exclude-->e"),
-            "ae\n\n",
+            "ae",
         );
-        assert_eq!(render("<!--typst-begin-exclude-->b\n\nc"), "",);
+        assert_eq!(render("<!--typst-begin-exclude-->b\n\nc"), "");
         assert_eq!(
             render("<!--typst-begin-exclude-->a<!--typst-end-exclude-->b"),
             "b",
         );
         assert_eq!(
             render("<!--typst-begin-exclude-->\nb<!--typst-end-exclude-->c"),
-            "c\n\n",
+            "c",
         );
-        assert_eq!(render("a<!--typst-begin-exclude-->b\n\nc"), "a",);
+        assert_eq!(render("a<!--typst-begin-exclude-->b\n\nc"), "a");
     }
 
     #[test]
@@ -1302,12 +1310,12 @@ mod tests {
         );
         assert_eq!(
             with_html("x<script>&amp;\""),
-            "x#(html.script)((:),\"&\\\"\");\n\n"
+            "x#(html.script)((:),\"&\\\"\");"
         );
         assert_eq!(with_html("<title>&amp;\""), "#(html.title)((:),\"&\\\"\");");
         assert_eq!(
             with_html("x<title>&amp;amp;\""),
-            "x#(html.title)((:),\"&amp;\\\"\");\n\n"
+            "x#(html.title)((:),\"&amp;\\\"\");"
         );
         assert_eq!(
             with_html("<script>x</script</script>y"),
@@ -1319,7 +1327,7 @@ mod tests {
         );
         assert_eq!(
             with_html("<title>\n\nx</title>y"),
-            "#(html.title)((:),\"\n\");xy\n\n"
+            "#(html.title)((:),\"\n\");xy"
         );
     }
 
@@ -1330,55 +1338,49 @@ mod tests {
         assert_eq!(with_html("</p >"), "");
 
         // Closing and autoclosing
-        assert_eq!(with_html("<b>a</b>b"), "#(html.b)((:))[a];b\n\n");
-        assert_eq!(with_html("<b>a</B>b"), "#(html.b)((:))[a];b\n\n");
+        assert_eq!(with_html("<b>a</b>b"), "#(html.b)((:))[a];b");
+        assert_eq!(with_html("<b>a</B>b"), "#(html.b)((:))[a];b");
         assert_eq!(
             with_html("<b><em>a</b>b"),
-            "#(html.b)((:))[#(html.em)((:))[a];];b\n\n"
+            "#(html.b)((:))[#(html.em)((:))[a];];b"
         );
         assert_eq!(
             with_html("<b><em>a</p>b"),
-            "#(html.b)((:))[#(html.em)((:))[ab\n\n]]"
+            "#(html.b)((:))[#(html.em)((:))[ab]]"
         );
         assert_eq!(
             with_html("<em><b>a</b>b</em>"),
-            "#(html.em)((:))[#(html.b)((:))[a];b];\n\n"
+            "#(html.em)((:))[#(html.b)((:))[a];b];"
         );
     }
 
     #[test]
     fn html_comments() {
         assert_eq!(render("<!-- -- -- -- -->x"), "x");
-        assert_eq!(render("x<!-- -- -- -- -->y"), "xy\n\n");
+        assert_eq!(render("x<!-- -- -- -- -->y"), "xy");
         assert_eq!(render("<!--\n\n\n\n\n\t-->x"), "x");
-        assert_eq!(render("-\n\t<!--\n\t-->"), "#list([  ],)\n");
+        assert_eq!(render("-\n\t<!--\n\t-->"), "#list([  ],)");
     }
 
     #[test]
     fn autoclosing() {
         assert_eq!(
             with_html("x<b>*<b>y*z</b>w"),
-            "x#(html.b)((:))[#emph[#(html.b)((:))[y];];z];w\n\n"
+            "x#(html.b)((:))[#emph[#(html.b)((:))[y];];z];w"
         );
-        assert_eq!(
-            with_html("- <b>x\n- y"),
-            "#list([#(html.b)((:))[x];],[y],)\n",
-        );
-        assert_eq!(
-            with_html("a<b>b*c</b>d*e"),
-            "a#(html.b)((:))[b#emph[cd];e\n\n]",
-        );
+        assert_eq!(with_html("- <b>x\n- y"), "#list([#(html.b)((:))[x];],[y],)");
+        assert_eq!(with_html("a<b>b*c</b>d*e"), "a#(html.b)((:))[b#emph[cd];e]");
     }
 
     #[test]
     fn raw_typst() {
-        assert_eq!(render("a<!--raw-typst #(1+1)-->b"), "ab\n\n");
-        assert_eq!(with_raw_typst("a<!--raw-typst#(1+1)-->b"), "a#(1+1)b\n\n");
+        assert_eq!(render("a<!--raw-typst #(1+1)-->b"), "ab");
+        assert_eq!(with_raw_typst("a<!--raw-typst#(1+1)-->b"), "a#(1+1)b");
         assert_eq!(
             with_raw_typst("<!--raw-typst\n\n#(1+1)\n\n-->\nb"),
-            "\n\n#(1+1)\n\n\nb\n\n"
+            "\n\n#(1+1)\n\n\nb"
         );
-        assert_eq!(render("<!--raw-typst\n\n#(1+1)\n\n-->\nb"), "\nb\n\n");
+        assert_eq!(render("<!--raw-typst\n\n#(1+1)\n\n-->\nb"), "\nb");
         assert_eq!(render("<!--raw-typst #(1+1)-->a"), "a");
     }
 
@@ -1415,13 +1417,13 @@ mod tests {
 
     #[test]
     fn prefix() {
-        assert_eq!(with_prefix("[@foo]"), "#ref(label(\"u-foo\"));\n\n");
+        assert_eq!(with_prefix("[@foo]"), "#ref(label(\"u-foo\"));");
         assert_eq!(
             with_prefix("[x][@foo]"),
-            "#(s=>ref(label(\"u-foo\"),supplement:s))[x];\n\n"
+            "#(s=>ref(label(\"u-foo\"),supplement:s))[x];"
         );
-        assert_eq!(with_prefix("[](#foo)"), "#link(label(\"u-foo\"))[];\n\n");
-        assert_eq!(with_prefix("# h"), "\n= h <l-h>\n");
+        assert_eq!(with_prefix("[](#foo)"), "#link(label(\"u-foo\"))[];");
+        assert_eq!(with_prefix("# h"), "\n= h <l-h>");
         assert_eq!(
             with_prefix("[^f]\n[^f]: hi"),
             "#ref(label(\"l-f\"));\n\n#[#show super:s=>none;#let l=\"l-f\";#footnote[hi\n\n]#label(l)];"
