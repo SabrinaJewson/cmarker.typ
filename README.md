@@ -509,5 +509,5 @@ And having them span the page width:
 	which produces the `plugin.wasm` necessary to use this.
 - Compile examples with `typst compile examples/{name}.typ`.
 - Compile this README to PDF with `typst compile README.typ`.
-- Run tests with `cargo test --workspace` and `cargo run -p test-runner`.
+- Run tests with `cargo test --workspace`.
 - Fuzz the library with `cargo +nightly fuzz run fuzz`.
