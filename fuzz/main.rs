@@ -23,6 +23,7 @@ fuzz_target!(|markdown: &str| {
         html_tags: &*HTML_TAGS,
         label_prefix: LabelPrefix::new("").unwrap(),
         label_use_prefix: LabelPrefix::new("").unwrap(),
+        heading_label_case: HeadingLabelCase::KebabPreserve,
         flags: Flags::SMART_PUNCTUATION | Flags::MATH,
         h1_level: 1,
     };
@@ -35,6 +36,7 @@ fuzz_target!(|markdown: &str| {
 
 use cmarker_typst::CaseInsensitive;
 use cmarker_typst::Flags;
+use cmarker_typst::HeadingLabelCase;
 use cmarker_typst::HtmlTagKind;
 use cmarker_typst::HtmlTagMap;
 use cmarker_typst::LabelPrefix;
