@@ -8,6 +8,7 @@
   html: (:),
   label-prefix: "",
   prefix-label-uses: true,
+  heading-label-case: "kebab",
   scope: (:),
   show-source: false,
   blockquote: none,
@@ -187,7 +188,13 @@
     scope += (inlinemath: math.with(block: false), displaymath: math.with(block: true))
   }
 
-  let options-bytes = (flags, h1-level)
+  let heading-label-case = {
+    if heading-label-case == "kebab" { 0 }
+    else if heading-label-case == "kebab-preserve" { 1 }
+    else { assert(false, message: "invalid heading-label-case") }
+  }
+
+  let options-bytes = (flags, h1-level, heading-label-case)
 
   options-bytes += array(bytes(label-prefix)) + (0xFF,)
   options-bytes += array(bytes(label-use-prefix)) + (0xFF,)

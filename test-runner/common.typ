@@ -8,6 +8,7 @@
   raw-typst: true,
   html: (:),
   label-prefix: "",
+  heading-label-case: "kebab",
   prefix-label-uses: true,
   scope: (:),
   blockquote: none,
@@ -21,6 +22,7 @@
     html: html,
     label-prefix: label-prefix,
     prefix-label-uses: prefix-label-uses,
+    heading-label-case: heading-label-case,
     scope: scope,
     blockquote: blockquote,
   )

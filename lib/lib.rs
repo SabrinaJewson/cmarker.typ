@@ -8,6 +8,7 @@ pub struct Options<'a, H: HtmlTags> {
     pub html_tags: &'a H,
     pub label_prefix: LabelPrefix<'a>,
     pub label_use_prefix: LabelPrefix<'a>,
+    pub heading_label_case: HeadingLabelCase,
     pub flags: Flags,
     pub h1_level: u8,
 }
@@ -46,6 +47,22 @@ impl<'a> LabelPrefix<'a> {
             return None;
         }
         Some(Self(s))
+    }
+}
+
+#[derive(Clone, Copy)]
+pub enum HeadingLabelCase {
+    Kebab,
+    KebabPreserve,
+}
+
+impl HeadingLabelCase {
+    pub fn from_u8(byte: u8) -> Option<Self> {
+        Some(match byte {
+            0 => Self::Kebab,
+            1 => Self::KebabPreserve,
+            _ => return None,
+        })
     }
 }
 
@@ -348,7 +365,7 @@ pub fn run<H: HtmlTags>(markdown: &str, options: Options<'_, H>) -> Result<Vec<u
             E::Text(text) => {
                 escape_text(text.as_bytes(), &mut result);
                 if let Some(label) = current_header_label.as_mut() {
-                    label.push(&text);
+                    label.push(&text, options.heading_label_case);
                 }
             }
 
@@ -358,7 +375,7 @@ pub fn run<H: HtmlTags>(markdown: &str, options: Options<'_, H>) -> Result<Vec<u
                 result.extend_from_slice(b"\");");
 
                 if let Some(label) = current_header_label.as_mut() {
-                    label.push(&code);
+                    label.push(&code, options.heading_label_case);
                 }
             }
 
@@ -385,7 +402,7 @@ pub fn run<H: HtmlTags>(markdown: &str, options: Options<'_, H>) -> Result<Vec<u
                 result.extend_from_slice(b"\");");
 
                 if let Some(label) = current_header_label.as_mut() {
-                    label.push(&s);
+                    label.push(&s, options.heading_label_case);
                 }
             }
 
@@ -1020,17 +1037,17 @@ impl LabelTracker<'_> {
 struct Label(String);
 
 impl Label {
-    fn push(&mut self, s: &str) {
-        // We follow an algorithm similar to GitHub’s[1]. In particular:
-        // + We strip out invalid characters (instead of GitHub’s disallowed list, we keep just
-        //   characters allowed in Typst labels, and additionally removing `:` and `.`).
-        // + We convert everything to lowercase.
-        // + We replace ASCII spaces (but no other whitespace) to hyphens.
+    fn push(&mut self, s: &str, case: HeadingLabelCase) {
+        // Unlike GitHub’s algorithm[1], we keep just characters allowed in Typst labels,
+        // additionally removing `:` and `.`.
         //
         // [1]: https://github.com/Flet/github-slugger
         for c in s.chars() {
             if is_id_continue(c) {
-                self.0.extend(c.to_lowercase());
+                match case {
+                    HeadingLabelCase::Kebab => self.0.extend(c.to_lowercase()),
+                    HeadingLabelCase::KebabPreserve => self.0.push(c),
+                }
             } else if c == ' ' {
                 self.0.push('-');
             }
@@ -1089,6 +1106,18 @@ mod tests {
         assert_eq!(
             render("# a-1\n# a\n# a\n# a-1"),
             "\n= a\\-1 <a-1>\n\n= a <a>\n\n= a <a-2>\n\n= a\\-1 <a-1-1>"
+        );
+    }
+
+    #[test]
+    fn heading_label_case() {
+        assert_eq!(
+            with_heading_label_case("# AΒ Cd", HeadingLabelCase::Kebab),
+            "\n= AΒ Cd <aβ-cd>"
+        );
+        assert_eq!(
+            with_heading_label_case("# AΒ Cd", HeadingLabelCase::KebabPreserve),
+            "\n= AΒ Cd <AΒ-Cd>"
         );
     }
 
@@ -1478,6 +1507,11 @@ mod tests {
         options.label_use_prefix = LabelPrefix::new("u-").unwrap();
         render_with(s, options)
     }
+    fn with_heading_label_case(s: &str, case: HeadingLabelCase) -> String {
+        let mut options = default_options();
+        options.heading_label_case = case;
+        render_with(s, options)
+    }
     fn render(s: &str) -> String {
         render_with(s, default_options())
     }
@@ -1488,6 +1522,7 @@ mod tests {
             html_tags,
             label_prefix: LabelPrefix::new("").unwrap(),
             label_use_prefix: LabelPrefix::new("").unwrap(),
+            heading_label_case: HeadingLabelCase::Kebab,
             flags: Flags::empty(),
             h1_level: 1,
         }
@@ -1542,6 +1577,7 @@ mod tests {
 
     use crate::CaseInsensitive;
     use crate::Flags;
+    use crate::HeadingLabelCase;
     use crate::HtmlTagKind;
     use crate::HtmlTagMap;
     use crate::HtmlTags;
