@@ -50,10 +50,12 @@
   if type(markdown) == content and markdown.has("text") {
     markdown = markdown.text
   }
+  assert(type(markdown) == str, message: "Markdown must be a string")
 
   scope = (rule: line.with(length: 100%), ..scope)
 
   if blockquote != none {
+    assert(type(blockquote) == function, message: "blockquote must be a function")
     scope += (
       quote: (block: false, ..rest) => if block { blockquote(..rest) } else { quote(..rest) },
     )
@@ -67,6 +69,7 @@
     }
   }
 
+  assert(type(label-prefix) == str, message: "label-prefix must be a string")
   let label-use-prefix = if prefix-label-uses { label-prefix } else { "" }
 
   let heading-fn(level) = (attrs, body) => {
@@ -184,6 +187,7 @@
     flags += 0b00000010
   }
   if math != none {
+    assert(type(math) == function, message: "math must be a function")
     flags += 0b00000100
     scope += (inlinemath: math.with(block: false), displaymath: math.with(block: true))
   }
@@ -194,6 +198,9 @@
     else { assert(false, message: "invalid heading-label-case") }
   }
 
+  assert(type(h1-level) == int, message: "h1-level must be an integer")
+  assert(0 <= h1-level and h1-level <= 255, message: "h1-level must be in the range [0, 255]")
+
   let options-bytes = (flags, h1-level, heading-label-case)
 
   options-bytes += array(bytes(label-prefix)) + (0xFF,)
@@ -201,7 +208,8 @@
 
   scope.html = (:)
   for (tag-name, value) in html {
-    let (kind, callback) = if type(value) == function { ("normal", value) } else { value };
+    let (kind, callback) = if type(value) == function { ("normal", value) } else { value }
+    assert(type(callback) == function, message: "HTML callback must be a function")
     scope.html.insert(tag-name, callback)
     options-bytes += array(bytes(tag-name))
     options-bytes.push(if kind == "void" {
@@ -212,6 +220,8 @@
       0xFE
     } else if kind == "normal" {
       0xFF
+    } else {
+      assert(false, message: "invalid HTML tag kind for <" + tag-name + "> (expected void, raw-text, escapable-raw-text or normal)")
     })
   }
 
