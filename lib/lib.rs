@@ -962,21 +962,43 @@ fn escape_string(text: &[u8], result: &mut Vec<u8>) {
 }
 
 fn escape_text(text: &[u8], result: &mut Vec<u8>) {
-    let mut iter = text.iter().enumerate();
-    while let Some((i, &byte)) = iter.next() {
-        let prefix = [b"http://" as &[u8], b"https://"]
-            .iter()
-            .find(|s| text[i..].starts_with(s));
-        if let Some(prefix) = prefix {
-            result.extend_from_slice(b"#(\"");
-            result.extend_from_slice(prefix);
-            result.extend_from_slice(b"\");");
-            iter.nth(prefix.len() - 2);
-            continue;
-        }
-
-        let to_escape = b"*_`<>@=-+/$\\'\"~#[]";
-        if memchr(byte, to_escape).is_some() {
+    for &byte in text {
+        // For shorthands used in markup mode, see:
+        // <https://github.com/typst/typst/blob/f51cb4b03e9712b8eb404f8184a17ee4a63aaab2/crates/typst-syntax/src/ast.rs#L592-L597>
+        // rustfmt appears to have a bug that tries to move all the comments to the end of the
+        // previous line.
+        #[rustfmt::skip]
+        let to_escape = concat!(
+            // bold, italic, monospace/raw
+            "*_`",
+            // label start
+            "<",
+            // reference
+            "@",
+            // heading
+            "=",
+            // bullet list, en/em dashes, minus sign, soft hyphen
+            "-",
+            // numbered list
+            "+",
+            // ellipses, `1.`-style lists
+            ".",
+            // term list, comments, bare URLs
+            "/",
+            // math
+            "$",
+            // line break, character escapes
+            "\\",
+            // smart quotes
+            "'\"",
+            // non-breaking space
+            "~",
+            // code
+            "#",
+            // beginning and end of content blocks
+            "[]",
+        );
+        if memchr(byte, to_escape.as_bytes()).is_some() {
             result.push(b'\\');
         }
         result.push(byte);
@@ -1089,7 +1111,7 @@ mod tests {
     #[test]
     fn heading_labels() {
         assert_eq!(render("# α 三"), "\n= α 三\n#label(\"α-三\");");
-        assert_eq!(render("# _:-.-"), "\n= \\_:\\-.\\-\n#label(\"_--\");");
+        assert_eq!(render("# _:-.-"), "\n= \\_:\\-\\.\\-\n#label(\"_--\");");
         assert_eq!(
             render("# a`b`c"),
             "\n= a#raw(block:false,\"b\");c\n#label(\"abc\");"
@@ -1162,7 +1184,7 @@ mod tests {
     fn links_images() {
         assert_eq!(
             render("<https://example.org/\">"),
-            "#link(\"https://example.org/\\\"\")[#(\"https://\");example.org\\/\\\"];"
+            "#link(\"https://example.org/\\\"\")[https:\\/\\/example\\.org\\/\\\"];"
         );
         assert_eq!(
             render("[a](https://example.org)"),
@@ -1233,7 +1255,7 @@ mod tests {
     fn footnote() {
         assert_eq!(
             render("a [^1].\n\n[^1]: b\n\nc"),
-            "a #ref(label(\"1\"));.\n\n#[#show super:s=>none;#let l=\"1\";#footnote[b\n\n]#label(l)];c"
+            "a #ref(label(\"1\"));\\.\n\n#[#show super:s=>none;#let l=\"1\";#footnote[b\n\n]#label(l)];c"
         );
     }
 
@@ -1316,7 +1338,7 @@ mod tests {
         assert_eq!(with_html("<p "), "\\<p ");
         assert_eq!(with_html("<p>"), "");
         assert_eq!(with_html("<A-2>"), "");
-        assert_eq!(with_html("<p><2>"), "\\<2\\>");
+        assert_eq!(with_html("<p><2>"), "\\<2>");
         assert_eq!(with_html("<p attr=val>"), "");
         assert_eq!(with_html("<b>"), "#(html.b)((:))[]");
         assert_eq!(with_html("<B>"), "#(html.b)((:))[]");
@@ -1331,15 +1353,15 @@ mod tests {
             with_html("<b :9_.:-=_>"),
             "#(html.b)((\":9_.:-\":\"_\",))[]"
         );
-        assert_eq!(with_html("<p :`>"), "\\<p :\\`\\>");
+        assert_eq!(with_html("<p :`>"), "\\<p :\\`>");
         assert_eq!(with_html("<b u=a u=b>"), "#(html.b)((\"u\":\"a\",))[]");
 
         // Attribute values
         assert_eq!(with_html("<b _=\\>"), "#(html.b)((\"_\":\"\\\\\",))[]");
-        assert_eq!(with_html("<p _==>"), "\\<p \\_\\=\\=\\>");
-        assert_eq!(with_html("<p _=<>"), "\\<p \\_\\=\\<\\>");
-        assert_eq!(with_html("<p _=_'>"), "\\<p \\_\\=\\_\\'\\>");
-        assert_eq!(with_html("<p _=_\">"), "\\<p \\_\\=\\_\\\"\\>");
+        assert_eq!(with_html("<p _==>"), "\\<p \\_\\=\\=>");
+        assert_eq!(with_html("<p _=<>"), "\\<p \\_\\=\\<>");
+        assert_eq!(with_html("<p _=_'>"), "\\<p \\_\\=\\_\\'>");
+        assert_eq!(with_html("<p _=_\">"), "\\<p \\_\\=\\_\\\">");
         assert_eq!(
             with_html("<b _=\"=<>\\\">"),
             "#(html.b)((\"_\":\"=<>\\\\\",))[]"
@@ -1384,7 +1406,7 @@ mod tests {
 
     #[test]
     fn html_close_tags() {
-        assert_eq!(with_html("<p></0>"), "\\<\\/0\\>");
+        assert_eq!(with_html("<p></0>"), "\\<\\/0>");
         assert_eq!(with_html("</A-2>"), "");
         assert_eq!(with_html("</p >"), "");
 
@@ -1576,12 +1598,12 @@ mod tests {
 
     #[test]
     fn text_escaping() {
-        assert_eq!(escape_text("http://"), "#(\"http://\");");
-        assert_eq!(escape_text("foohttps://bar"), "foo#(\"https://\");bar");
+        assert_eq!(escape_text("http://"), "http:\\/\\/");
         assert_eq!(escape_text("*"), "\\*");
         assert_eq!(escape_text("`"), "\\`");
-        assert_eq!(escape_text("⟪<>⟫"), "⟪\\<\\>⟫");
+        assert_eq!(escape_text("⟪<>⟫"), "⟪\\<>⟫");
         assert_eq!(escape_text("\"\'--"), "\\\"\\\'\\-\\-");
+        assert_eq!(escape_text("..."), "\\.\\.\\.");
     }
 
     fn escape_string(s: &str) -> String {
