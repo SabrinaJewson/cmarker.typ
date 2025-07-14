@@ -947,7 +947,9 @@ fn take_until_semi(s: &[u8], mut f: impl FnMut(&u8) -> bool) -> Option<(&[u8], &
     Some((before, after))
 }
 
-mod entities;
+mod entities {
+    include!(concat!(env!("OUT_DIR"), "/entities.rs"));
+}
 
 fn escape_string(text: &[u8], result: &mut Vec<u8>) {
     let mut prev_i = 0;

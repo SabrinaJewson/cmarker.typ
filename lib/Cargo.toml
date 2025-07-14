@@ -23,3 +23,8 @@ unicode-ident = "1.0.18"
 
 [dev-dependencies]
 typst-syntax = "0.13.1"
+
+[build-dependencies]
+serde_json = "1.0.140"
+serde = { version = "1.0.218", features = ["derive"] }
+phf_codegen = "0.11.3"

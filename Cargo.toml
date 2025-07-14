@@ -1,5 +1,5 @@
 [workspace]
-members = ["lib", "plugin", "lib/generate-entities", "test-runner", "fuzz"]
+members = ["lib", "plugin", "test-runner", "fuzz"]
 resolver = "3"
 
 [profile.release.package.plugin]
