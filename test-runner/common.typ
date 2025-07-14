@@ -8,7 +8,7 @@
   raw-typst: true,
   html: (:),
   label-prefix: "",
-  heading-label-case: "kebab",
+  heading-labels: "github",
   prefix-label-uses: true,
   scope: (:),
   blockquote: none,
@@ -22,7 +22,7 @@
     html: html,
     label-prefix: label-prefix,
     prefix-label-uses: prefix-label-uses,
-    heading-label-case: heading-label-case,
+    heading-labels: heading-labels,
     scope: scope,
     blockquote: blockquote,
   )

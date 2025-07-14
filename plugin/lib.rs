@@ -16,7 +16,7 @@ wasm_minimal_protocol::initiate_protocol!();
 
 #[wasm_func]
 fn render(markdown: &[u8], options: &[u8]) -> Result<Vec<u8>, String> {
-    let &[flags, h1_level, heading_label_case, ref rest @ ..] = options else {
+    let &[flags, h1_level, heading_labels, ref rest @ ..] = options else {
         panic!()
     };
     let mut parts = rest
@@ -46,7 +46,7 @@ fn render(markdown: &[u8], options: &[u8]) -> Result<Vec<u8>, String> {
         html_tags: &html_tags,
         label_prefix,
         label_use_prefix,
-        heading_label_case: cmarker_typst::HeadingLabelCase::from_u8(heading_label_case).unwrap(),
+        heading_labels: cmarker_typst::HeadingLabels::from_u8(heading_labels).unwrap(),
         flags,
         h1_level,
     };

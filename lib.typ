@@ -8,7 +8,7 @@
   html: (:),
   label-prefix: "",
   prefix-label-uses: true,
-  heading-label-case: "kebab",
+  heading-labels: "github",
   scope: (:),
   show-source: false,
   blockquote: none,
@@ -192,16 +192,16 @@
     scope += (inlinemath: math.with(block: false), displaymath: math.with(block: true))
   }
 
-  let heading-label-case = {
-    if heading-label-case == "kebab" { 0 }
-    else if heading-label-case == "kebab-preserve" { 1 }
-    else { assert(false, message: "invalid heading-label-case") }
+  let heading-labels = {
+    if heading-labels == "github" { 0 }
+    else if heading-labels == "jupyter" { 1 }
+    else { assert(false, message: "invalid heading-labels") }
   }
 
   assert(type(h1-level) == int, message: "h1-level must be an integer")
   assert(0 <= h1-level and h1-level <= 255, message: "h1-level must be in the range [0, 255]")
 
-  let options-bytes = (flags, h1-level, heading-label-case)
+  let options-bytes = (flags, h1-level, heading-labels)
 
   options-bytes += array(bytes(label-prefix)) + (0xFF,)
   options-bytes += array(bytes(label-use-prefix)) + (0xFF,)

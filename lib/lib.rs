@@ -8,7 +8,7 @@ pub struct Options<'a, H: HtmlTags> {
     pub html_tags: &'a H,
     pub label_prefix: &'a str,
     pub label_use_prefix: &'a str,
-    pub heading_label_case: HeadingLabelCase,
+    pub heading_labels: HeadingLabels,
     pub flags: Flags,
     pub h1_level: u8,
 }
@@ -36,16 +36,16 @@ pub enum HtmlTagKind {
 }
 
 #[derive(Clone, Copy)]
-pub enum HeadingLabelCase {
-    Kebab,
-    KebabPreserve,
+pub enum HeadingLabels {
+    GitHub,
+    Jupyter,
 }
 
-impl HeadingLabelCase {
+impl HeadingLabels {
     pub fn from_u8(byte: u8) -> Option<Self> {
         Some(match byte {
-            0 => Self::Kebab,
-            1 => Self::KebabPreserve,
+            0 => Self::GitHub,
+            1 => Self::Jupyter,
             _ => return None,
         })
     }
@@ -350,7 +350,7 @@ pub fn run<H: HtmlTags>(markdown: &str, options: Options<'_, H>) -> Result<Vec<u
             E::Text(text) => {
                 escape_text(text.as_bytes(), &mut result);
                 if let Some(label) = current_header_label.as_mut() {
-                    label.push(&text, options.heading_label_case);
+                    label.push(&text, options.heading_labels);
                 }
             }
 
@@ -360,7 +360,7 @@ pub fn run<H: HtmlTags>(markdown: &str, options: Options<'_, H>) -> Result<Vec<u
                 result.extend_from_slice(b"\");");
 
                 if let Some(label) = current_header_label.as_mut() {
-                    label.push(&code, options.heading_label_case);
+                    label.push(&code, options.heading_labels);
                 }
             }
 
@@ -387,7 +387,7 @@ pub fn run<H: HtmlTags>(markdown: &str, options: Options<'_, H>) -> Result<Vec<u
                 result.extend_from_slice(b"\");");
 
                 if let Some(label) = current_header_label.as_mut() {
-                    label.push(&s, options.heading_label_case);
+                    label.push(&s, options.heading_labels);
                 }
             }
 
@@ -1025,19 +1025,32 @@ impl LabelTracker<'_> {
 struct Label(String);
 
 impl Label {
-    fn push(&mut self, s: &str, case: HeadingLabelCase) {
-        // Unlike GitHub’s algorithm[1], we keep just characters allowed in Typst labels,
-        // additionally removing `:` and `.`.
-        //
-        // [1]: https://github.com/Flet/github-slugger
-        for c in s.chars() {
-            if is_id_continue(c) {
-                match case {
-                    HeadingLabelCase::Kebab => self.0.extend(c.to_lowercase()),
-                    HeadingLabelCase::KebabPreserve => self.0.push(c),
+    fn push(&mut self, s: &str, mode: HeadingLabels) {
+        match mode {
+            HeadingLabels::GitHub => {
+                // Unlike GitHub’s algorithm[1], we keep just characters allowed in Typst labels,
+                // additionally removing `:` and `.`.
+                //
+                // [1]: https://github.com/Flet/github-slugger
+                for c in s.chars() {
+                    if is_id_continue(c) {
+                        match mode {
+                            HeadingLabels::GitHub => self.0.extend(c.to_lowercase()),
+                            HeadingLabels::Jupyter => self.0.push(c),
+                        }
+                    } else if c == ' ' {
+                        self.0.push('-');
+                    }
                 }
-            } else if c == ' ' {
-                self.0.push('-');
+            }
+            HeadingLabels::Jupyter => {
+                let mut prev_i = 0;
+                for i in memchr_iter(b' ', s.as_bytes()) {
+                    self.0.push_str(&s[prev_i..i]);
+                    self.0.push('-');
+                    prev_i = i + 1;
+                }
+                self.0.push_str(&s[prev_i..]);
             }
         }
     }
@@ -1117,13 +1130,13 @@ mod tests {
     }
 
     #[test]
-    fn heading_label_case() {
+    fn heading_label_mode() {
         assert_eq!(
-            with_heading_label_case("# AΒ Cd", HeadingLabelCase::Kebab),
+            with_heading_labels("# AΒ Cd", HeadingLabels::GitHub),
             "\n= AΒ Cd\n#label(\"aβ-cd\");"
         );
         assert_eq!(
-            with_heading_label_case("# AΒ Cd", HeadingLabelCase::KebabPreserve),
+            with_heading_labels("# AΒ Cd", HeadingLabels::Jupyter),
             "\n= AΒ Cd\n#label(\"AΒ-Cd\");"
         );
     }
@@ -1521,9 +1534,9 @@ mod tests {
         render_with(s, options)
     }
     #[track_caller]
-    fn with_heading_label_case(s: &str, case: HeadingLabelCase) -> String {
+    fn with_heading_labels(s: &str, case: HeadingLabels) -> String {
         let mut options = default_options();
-        options.heading_label_case = case;
+        options.heading_labels = case;
         render_with(s, options)
     }
     #[track_caller]
@@ -1537,7 +1550,7 @@ mod tests {
             html_tags,
             label_prefix: "",
             label_use_prefix: "",
-            heading_label_case: HeadingLabelCase::Kebab,
+            heading_labels: HeadingLabels::GitHub,
             flags: Flags::empty(),
             h1_level: 1,
         }
@@ -1583,7 +1596,7 @@ mod tests {
 
     use crate::CaseInsensitive;
     use crate::Flags;
-    use crate::HeadingLabelCase;
+    use crate::HeadingLabels;
     use crate::HtmlTagKind;
     use crate::HtmlTagMap;
     use crate::HtmlTags;
@@ -1608,6 +1621,7 @@ use hashbrown::DefaultHashBuilder;
 use hashbrown::HashMap;
 use hashbrown::HashSet;
 use memchr::memchr;
+use memchr::memchr_iter;
 use memchr::memchr2;
 use memchr::memchr2_iter;
 use memchr::memmem;

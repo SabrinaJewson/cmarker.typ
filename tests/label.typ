@@ -10,6 +10,6 @@
 
 @pk
 
-#run-cmarker("# My heading\n[@My-heading]", heading-label-case: "kebab-preserve")
+#run-cmarker("# My heading\n[@My-heading]", heading-labels: "jupyter")
 
 @My-heading
