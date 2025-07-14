@@ -54,6 +54,7 @@ render(
   html: (:),
   label-prefix: "",
   prefix-label-uses: true,
+  heading-labels: "github",
   scope: (:),
   show-source: false,
   blockquote: none,
