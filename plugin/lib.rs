@@ -28,10 +28,7 @@ fn render(markdown: &[u8], options: &[u8]) -> Result<Vec<u8>, String> {
     let flags = cmarker_typst::Flags::from_bits(flags).unwrap();
     let markdown = str::from_utf8(markdown).unwrap();
     let label_prefix = str::from_utf8(label_prefix).unwrap();
-    let label_prefix = cmarker_typst::LabelPrefix::new(label_prefix)
-        .ok_or_else(|| format!("{label_prefix:?} is not a valid label prefix"))?;
-    let label_use_prefix =
-        cmarker_typst::LabelPrefix::new(str::from_utf8(label_use_prefix).unwrap()).unwrap();
+    let label_use_prefix = str::from_utf8(label_use_prefix).unwrap();
 
     let mut html_tags: cmarker_typst::HtmlTagMap<'_> = HashMap::new();
     for (kind, tag) in parts {
@@ -57,7 +54,6 @@ fn render(markdown: &[u8], options: &[u8]) -> Result<Vec<u8>, String> {
     cmarker_typst::run(markdown, options)
 }
 
-use alloc::format;
 use alloc::string::String;
 use alloc::string::ToString;
 use alloc::vec;

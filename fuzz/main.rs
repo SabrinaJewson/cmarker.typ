@@ -21,8 +21,8 @@ fuzz_target!(|markdown: &str| {
 
     let options = cmarker_typst::Options {
         html_tags: &*HTML_TAGS,
-        label_prefix: LabelPrefix::new("").unwrap(),
-        label_use_prefix: LabelPrefix::new("").unwrap(),
+        label_prefix: "",
+        label_use_prefix: "",
         heading_label_case: HeadingLabelCase::KebabPreserve,
         flags: Flags::SMART_PUNCTUATION | Flags::MATH,
         h1_level: 1,
@@ -39,6 +39,5 @@ use cmarker_typst::Flags;
 use cmarker_typst::HeadingLabelCase;
 use cmarker_typst::HtmlTagKind;
 use cmarker_typst::HtmlTagMap;
-use cmarker_typst::LabelPrefix;
 use libfuzzer_sys::fuzz_target;
 use std::sync::LazyLock;
