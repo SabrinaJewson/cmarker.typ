@@ -1052,18 +1052,14 @@ impl Label {
     fn push(&mut self, s: &str, mode: HeadingLabels) {
         match mode {
             HeadingLabels::GitHub => {
-                // Unlike GitHub’s algorithm[1], we keep just characters allowed in Typst labels,
-                // additionally removing `:` and `.`.
-                //
-                // [1]: https://github.com/Flet/github-slugger
                 for c in s.chars() {
-                    if is_id_continue(c) {
-                        match mode {
-                            HeadingLabels::GitHub => self.0.extend(c.to_lowercase()),
-                            HeadingLabels::Jupyter => self.0.push(c),
-                        }
-                    } else if c == ' ' {
+                    if github_slug_disallow::SET.contains_char(c) {
+                        continue;
+                    }
+                    if c == ' ' {
                         self.0.push('-');
+                    } else {
+                        self.0.extend(c.to_lowercase());
                     }
                 }
             }
@@ -1080,8 +1076,8 @@ impl Label {
     }
 }
 
-fn is_id_continue(c: char) -> bool {
-    is_xid_continue(c) || matches!(c, '_' | '-')
+mod github_slug_disallow {
+    include!(concat!(env!("OUT_DIR"), "/github_slug_disallow.rs"));
 }
 
 mod farm;
@@ -1150,6 +1146,20 @@ mod tests {
                 "\n= a\n#label(\"a-2\");\n",
                 "\n= a\\-1\n#label(\"a-1-1\");",
             ),
+        );
+        // A couple of examples from:
+        // <https://github.com/Flet/github-slugger/blob/3461c4350868329c8530904d170358bca1d31448/test/fixtures.json>
+        assert_eq!(
+            render("# I ♥ unicode"),
+            "\n= I ♥ unicode\n#label(\"i--unicode\");"
+        );
+        assert_eq!(
+            render("# a_ ‿ ⁀ ⁔ ︳ ︴ ﹍ ﹎ ﹏ ＿b"),
+            "\n= a\\_ ‿ ⁀ ⁔ ︳ ︴ ﹍ ﹎ ﹏ ＿b\n#label(\"a_-‿-⁀-⁔-︳-︴-﹍-﹎-﹏-＿b\");"
+        );
+        assert_eq!(
+            render("# a- ֊ ־ ᐀ ᠆ ‐ ‑ ‒ – — ― ⸗ ⸚ ⸺ ⸻ ⹀ 〜 〰 ゠ ︱ ︲ ﹘ ﹣ －b"),
+            "\n= a\\- ֊ ־ ᐀ ᠆ ‐ ‑ ‒ – — ― ⸗ ⸚ ⸺ ⸻ ⹀ 〜 〰 ゠ ︱ ︲ ﹘ ﹣ －b\n#label(\"a------------------------b\");",
         );
     }
 
@@ -1651,4 +1661,3 @@ use memchr::memchr2_iter;
 use memchr::memmem;
 use pulldown_cmark::Alignment;
 use pulldown_cmark::CowStr;
-use unicode_ident::is_xid_continue;
