@@ -301,7 +301,7 @@ you can use `id=` in HTML, or use `raw-typst` blocks
 (note that these **must** be preceded by a newline):
 
 ```md
-<h1 id="my-nice-section">My nice heading</h1>-
+<h1 id="my-nice-section">My nice heading</h1>
 
 # My other nice heading
 <!--raw-typst <my-other-nice-section> -->

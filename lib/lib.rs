@@ -149,12 +149,12 @@ pub fn run<H: HtmlTags>(markdown: &str, options: Options<'_, H>) -> Result<Vec<u
 
             E::Start(Tag::CodeBlock(kind)) => {
                 result.extend_from_slice(b"#raw(block:true,");
-                if let CodeBlockKind::Fenced(lang) = kind {
-                    if !lang.is_empty() {
-                        result.extend_from_slice(b"lang:\"");
-                        escape_string(lang.as_bytes(), &mut result);
-                        result.extend_from_slice(b"\",");
-                    }
+                if let CodeBlockKind::Fenced(lang) = kind
+                    && !lang.is_empty()
+                {
+                    result.extend_from_slice(b"lang:\"");
+                    escape_string(lang.as_bytes(), &mut result);
+                    result.extend_from_slice(b"\",");
                 }
                 result.push(b'"');
                 loop {
@@ -830,11 +830,11 @@ use unpeekable::Unpeekable;
 fn escape_string_with_character_references(mut text: &[u8], result: &mut Vec<u8>) {
     while let &[first, ref after_first @ ..] = text {
         text = after_first;
-        if first == b'&' {
-            if let Some(s) = decode_character_reference_escape(&mut text).as_deref() {
-                result.extend_from_slice(s.as_bytes());
-                continue;
-            }
+        if first == b'&'
+            && let Some(s) = decode_character_reference_escape(&mut text).as_deref()
+        {
+            result.extend_from_slice(s.as_bytes());
+            continue;
         }
         if memchr(first, b"\\\"").is_some() {
             result.push(b'\\');
