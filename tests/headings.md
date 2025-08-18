@@ -17,3 +17,8 @@
 <h1 id="some-id">h</h1>
 
 [@some-id]
+
+# h
+<!--raw-typst <another-id> -->
+
+[@another-id]

@@ -297,12 +297,17 @@ If you want to cite something from a bibliography,
 you can do it much the same way: `[@citation]`.
 
 If you want to customize the label of a heading from the default,
-you can use `id=` in HTML:
+you can use `id=` in HTML, or use `raw-typst` blocks
+(note that these **must** be preceded by a newline):
 
 ```md
-<h1 id="my-nice-section">My nice heading</h1>
+<h1 id="my-nice-section">My nice heading</h1>-
 
-See [@my-nice-section]. <!-- generates “See Section 1.” -->
+# My other nice heading
+<!--raw-typst <my-other-nice-section> -->
+
+See [@my-nice-section] and [@my-other-nice-section].
+<!-- generates “See Section 1 and Section 2.” -->
 ```
 
 This can also be used with figures, which is very powerful:
