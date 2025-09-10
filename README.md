@@ -58,6 +58,7 @@ render(
   scope: (:),
   show-source: false,
   blockquote: none,
+  frontmatter: none,
 ) -> content
 ```
 
@@ -250,6 +251,25 @@ The parameters are as follows:
 	or use `scope: (quote: …)`.
 	- Accepted values: Functions accepting content and returning content, or `none`.
 	- Default value: `none`.
+
+- `frontmatter`:
+  A function to define how markdown metadata affects the document.
+  Contents inside the frontmatter section (defined by `---\nfrontmatter\n---\n` at the top of the file) are hidden from the main body and can be accessed here.
+  The underlying format for the frontmatter is determined by the user and should be parsed accordingly.
+  For example,
+  ```typst
+  #cmarker.render(
+    read("input.md"),
+    frontmatter: (meta, body) => {
+      meta = yaml(bytes(meta))
+      set document(title: meta.at("title"))
+      body
+    },
+  )
+  ```
+  - Accepted values: Functions accepting (metadata, content) and returning content, or `none`.
+	- Default value: `none`.
+
 
 This function returns the rendered `content`.
 

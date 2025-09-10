@@ -12,6 +12,7 @@
   scope: (:),
   show-source: false,
   blockquote: none,
+  frontmatter: none
 ) = {
   // A simple system for tagging content with invisible metadata.
   // Used to implement various HTML tags that need some amount of structure.
@@ -225,10 +226,40 @@
     })
   }
 
+  // Transforms the following:
+  // ```md
+  // ---
+  // frontmatter
+  // ---
+  // content
+  // ```
+  // into the tuple (frontmatter, content) of type (str, str).
+  //
+  // The frontmatter is left as a string to let the user
+  // decide the metadata format i.e. yaml, toml, etc.
+  let extract-frontmatter(filecontent) = {
+    if not filecontent.starts-with("---\n") {
+      return ("", filecontent)
+    }
+    filecontent = filecontent.slice("---\n".len())
+    let end = filecontent.position("\n---\n")
+
+    let content = filecontent.slice(end + "\n---\n".len())
+    let frontmatter = filecontent.slice(0, end)
+    return (frontmatter, content)
+  }
+
+  let (markdown_frontmatter, markdown) = extract-frontmatter(markdown)
   let rendered = str(_p.render(bytes(markdown), bytes(options-bytes)))
-  if show-source {
+
+  let body = if show-source {
     raw(rendered, block: true, lang: "typ")
   } else {
     eval(rendered, mode: "markup", scope: scope)
+  }
+  if frontmatter != none {
+    frontmatter(markdown_frontmatter, body)
+  } else {
+    body
   }
 }
