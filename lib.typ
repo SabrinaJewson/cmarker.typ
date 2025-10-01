@@ -1,5 +1,5 @@
 #let _p = plugin("./plugin.wasm")
-#let render(
+#let render-with-metadata(
   markdown,
   smart-punctuation: true,
   math: none,
@@ -12,7 +12,7 @@
   scope: (:),
   show-source: false,
   blockquote: none,
-  frontmatter: none
+  metadata-block: none
 ) = {
   // A simple system for tagging content with invisible metadata.
   // Used to implement various HTML tags that need some amount of structure.
@@ -249,7 +249,7 @@
     return (frontmatter, content)
   }
 
-  let (markdown_frontmatter, markdown) = extract-frontmatter(markdown)
+  // let (markdown_frontmatter, markdown) = extract-frontmatter(markdown)
   let rendered = str(_p.render(bytes(markdown), bytes(options-bytes)))
 
   let body = if show-source {
@@ -257,9 +257,41 @@
   } else {
     eval(rendered, mode: "markup", scope: scope)
   }
-  if frontmatter != none {
-    frontmatter(markdown_frontmatter, body)
-  } else {
-    body
-  }
+  // if frontmatter != none {
+  //   frontmatter(markdown_frontmatter, body)
+  // } else {
+  //   body
+  // }
+  body
+}
+
+#let render(
+  markdown,
+  smart-punctuation: true,
+  math: none,
+  h1-level: 1,
+  raw-typst: true,
+  html: (:),
+  label-prefix: "",
+  prefix-label-uses: true,
+  heading-labels: "github",
+  scope: (:),
+  show-source: false,
+  blockquote: none
+) = {
+  render-with-metadata(
+    markdown,
+    smart-punctuation: smart-punctuation,
+    math: math,
+    h1-level: h1-level,
+    raw-typst: raw-typst,
+    html: html,
+    label-prefix: label-prefix,
+    prefix-label-uses: prefix-label-uses,
+    heading-labels: heading-labels,
+    scope: scope,
+    show-source: show-source,
+    blockquote: blockquote,
+    metadata-block: none,
+  )
 }
