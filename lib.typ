@@ -237,19 +237,46 @@
   //
   // The frontmatter is left as a string to let the user
   // decide the metadata format i.e. yaml, toml, etc.
+  //
+  // A YAML metadata block is a valid YAML object,
+  // [1] delimited by a line of three hyphens (---) at the top
+  // [2] and a line of three hyphens (---) or three dots (...) at the bottom.
+  // [3] The initial line --- must not be followed by a blank line.
   let extract-frontmatter(filecontent) = {
-    if not filecontent.starts-with("---\n") {
+    if (not filecontent.starts-with("---\n")) or filecontent.starts-with("---\n\n") {
       return ("", filecontent)
     }
+    let original_filecontent = filecontent
     filecontent = filecontent.slice("---\n".len())
-    let end = filecontent.position("\n---\n")
+    let allowed_closing_delimiters = (
+      "\n---\n",
+      "\n...\n"
+    )
+    // Checks for position of `allowed_closing_delimiters`
+    // and returns the first instance between them
+    // with info on position and delimiter, e.g: (10, "\n---\n").
+    // If no instance is found, returns (none, "")
+    let end = allowed_closing_delimiters
+      .map(delim => (filecontent.position(delim), delim))
+      .filter(pos => pos.at(0) != none)
+      .sorted(key: x => x.at(0))
+      .at(0, default: (none, ""))
 
-    let content = filecontent.slice(end + "\n---\n".len())
-    let frontmatter = filecontent.slice(0, end)
+    // No metadata-block is detected.
+    if end == (none, "") {
+      return ("", original_filecontent)
+    }
+
+    let content = filecontent.slice(end.at(0) + end.at(1).len())
+    let frontmatter = filecontent.slice(0, end.at(0))
     return (frontmatter, content)
   }
 
-  // let (markdown_frontmatter, markdown) = extract-frontmatter(markdown)
+  let (markdown_frontmatter, markdown) = if metadata-block != none {
+     extract-frontmatter(markdown)
+  } else {
+    (none, markdown)
+  }
   let rendered = str(_p.render(bytes(markdown), bytes(options-bytes)))
 
   let body = if show-source {
@@ -257,12 +284,24 @@
   } else {
     eval(rendered, mode: "markup", scope: scope)
   }
-  // if frontmatter != none {
-  //   frontmatter(markdown_frontmatter, body)
-  // } else {
-  //   body
-  // }
-  body
+
+  let allowed_metadata-block_value = ("frontmatter-raw", "frontmatter-yaml", none)
+  if not metadata-block in allowed_metadata-block_value {
+    assert(false
+      , message: "Invalid metadata-block value (`\""
+                  + metadata-block
+                  + "\"`). Allowed values are: "
+                  + allowed_metadata-block_value
+                    .map(x => if x == none {"`none`"} else {"`\"" + x + "\"`"}).join(", "))
+  }
+
+  let metadata-block-content = if metadata-block == "frontmatter-raw" {
+    markdown_frontmatter
+  } else if metadata-block == "frontmatter-yaml" {
+    yaml(bytes(markdown_frontmatter))
+  }
+
+  (metadata-block-content, body)
 }
 
 #let render(
@@ -279,7 +318,7 @@
   show-source: false,
   blockquote: none
 ) = {
-  render-with-metadata(
+  let (meta, body) = render-with-metadata(
     markdown,
     smart-punctuation: smart-punctuation,
     math: math,
@@ -294,4 +333,5 @@
     blockquote: blockquote,
     metadata-block: none,
   )
+  body
 }
