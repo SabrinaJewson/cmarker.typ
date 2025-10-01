@@ -42,8 +42,11 @@ formats.
 
 ## API
 
-We offer a single function:
+We offer a two functions:
+1. [render](#render)
+2. [render-with-metadata](#render-with-metadata)
 
+### render
 ```typc
 render(
   markdown,
@@ -58,7 +61,6 @@ render(
   scope: (:),
   show-source: false,
   blockquote: none,
-  frontmatter: none,
 ) -> content
 ```
 
@@ -252,26 +254,44 @@ The parameters are as follows:
 	- Accepted values: Functions accepting content and returning content, or `none`.
 	- Default value: `none`.
 
-- `frontmatter`:
-  A function to define how markdown metadata affects the document.
-  Contents inside the frontmatter section (defined by `---\nfrontmatter\n---\n` at the top of the file) are hidden from the main body and can be accessed here.
-  The underlying format for the frontmatter is determined by the user and should be parsed accordingly.
-  For example,
-  ```typst
-  #cmarker.render(
-    read("input.md"),
-    frontmatter: (meta, body) => {
-      meta = yaml(bytes(meta))
-      set document(title: meta.at("title"))
-      body
-    },
-  )
-  ```
-  - Accepted values: Functions accepting (metadata, content) and returning content, or `none`.
-	- Default value: `none`.
-
-
 This function returns the rendered `content`.
+
+### render-with-metadata
+
+```typc
+render-with-metadata(
+  markdown,
+  smart-punctuation: true,
+  math: none,
+  h1-level: 1,
+  raw-typst: true,
+  html: (:),
+  label-prefix: "",
+  prefix-label-uses: true,
+  heading-labels: "github",
+  scope: (:),
+  show-source: false,
+  blockquote: none,
+  metadata-block: none,
+) -> (metadata, content)
+```
+
+The `render-with-metadata` functions works the same as `render` with two exceptions:
+1. This function returns `(meta, body)`. This allows the user to freely manipulate the metadata.
+	```typc
+	#let (meta, body) = render-with-metadata(input)
+	#let body = render(input)
+	```
+2. This function has an extra argument: `metadata-block`. The other arguments are the same as `render`.
+
+- `metadata-block`:
+	How to parse the metadata block. This function only accepts a single metadata block at the beginning of the document.
+	Multiple metadata blocks are not yet supported.
+	If `none`, the metadata block will not be parsed. The resulting content is the same as using `render`.
+	If `frontmatter-raw`, the metadata block is parsed and returned as a string.
+	If `frontmatter-yaml`, the metadata block is parsed and returned as a dictionary if it is a valid yaml string.
+	- Accepted values: `"frontmatter-raw"`, `"frontmatter-yaml"`, or `none`.
+	- Default value: `none`.
 
 ## Resolving Paths Correctly
 
