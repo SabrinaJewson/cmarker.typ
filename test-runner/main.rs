@@ -1,3 +1,13 @@
+/// Writing tests.
+///
+/// The test runner will find all `*.typ` or `*.md` in the `tests/` directory
+/// and then will generate the corresponding `*.html` if not available.
+/// This generated `*.html` file serves as the test case for future modifications.
+/// If an existing `*.html` is available, the test runner will compare
+/// the newly generated html with the available html file and fails when there is a difference.
+///
+/// For `*.typ` files, the html will be generated as defined in the file.
+/// For `*.md` files, the markdown content is parsed to `test-runner/scaffold.typ` before generating the html.
 fn main() -> anyhow::Result<()> {
     env::set_current_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/.."))?;
     let bless = env::var_os("BLESS").is_some();
