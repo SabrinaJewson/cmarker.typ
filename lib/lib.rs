@@ -238,7 +238,8 @@ pub fn run<H: HtmlTags>(markdown: &str, options: Options<'_, H>) -> Result<Vec<u
                 title: _,
                 id: _,
             }) => {
-                eat_until_end(&mut parser);
+                serialize(&mut parser, |_, _| {});
+                assert_eq!(parser.next().0, Some(E::End(TagEnd::Link)));
 
                 let label = dest_url.strip_prefix("@").unwrap();
                 result.extend_from_slice(b"#ref(label(\"");
@@ -296,18 +297,8 @@ pub fn run<H: HtmlTags>(markdown: &str, options: Options<'_, H>) -> Result<Vec<u
                 result.extend_from_slice(b"#image(\"");
                 escape_string(dest_url.as_bytes(), &mut result);
                 result.extend_from_slice(b"\",alt:\"");
-                let mut layers = 1_u32;
-                while layers != 0 {
-                    match parser.next().0.unwrap() {
-                        E::Text(s) | E::InlineHtml(s) | E::Code(s) => {
-                            escape_string(s.as_bytes(), &mut result)
-                        }
-                        E::SoftBreak | E::HardBreak => result.push(b' '),
-                        E::Start(Tag::Image { .. }) => layers += 1,
-                        E::End(TagEnd::Image) => layers -= 1,
-                        _ => {}
-                    }
-                }
+                serialize(&mut parser, |s, _| escape_string(s.as_bytes(), &mut result));
+                assert_eq!(parser.next().0, Some(E::End(TagEnd::Image)));
                 result.extend_from_slice(b"\");");
             }
             E::End(TagEnd::Image) => unreachable!(),
@@ -577,10 +568,18 @@ fn html_open_tag(cx: &mut HtmlContext<'_, '_, impl HtmlTags>) -> Option<()> {
                     _ => unreachable!(),
                 };
 
-                'outer: while let Some(text) = cx.refill() {
-                    if let Some(text) = text {
-                        escape_string(text.as_bytes(), cx.result);
-                        continue;
+                'outer: loop {
+                    if cx.html.is_empty() {
+                        let Some(html) = serialize_until_html(cx.parser, |text, is_html| {
+                            if is_html {
+                                maybe_decode(text.as_bytes(), cx.result)
+                            } else {
+                                escape_string(text.as_bytes(), cx.result)
+                            }
+                        }) else {
+                            break;
+                        };
+                        cx.html = cx.farm.add(html).as_bytes();
                     }
                     for possible_end in memmem::find_iter(cx.html, b"</") {
                         let (before, after) = cx.html.split_at(possible_end);
@@ -636,30 +635,15 @@ fn html_comment(cx: &mut HtmlContext<'_, '_, impl HtmlTags>) -> Option<()> {
     const BEGIN_EXCLUDE: &[u8] = b"typst-begin-exclude-->";
     const END_EXCLUDE: &[u8] = b"<!--typst-end-exclude-->";
     if cx.html.starts_with(BEGIN_EXCLUDE) {
-        loop {
+        cx.html = loop {
             if let Some(end) = memmem::find(cx.html, END_EXCLUDE) {
-                cx.html = &cx.html[end + END_EXCLUDE.len()..];
-                break;
+                break &cx.html[end + END_EXCLUDE.len()..];
             }
-            cx.html = b"";
-
-            let (Some(event), unpeeker) = cx.parser.next() else {
-                break;
+            let Some(html) = serialize_until_html(cx.parser, |_, _| {}) else {
+                break b"";
             };
-
-            use pulldown_cmark::{Event as E, Tag, TagEnd};
-            match event {
-                E::Html(s) | E::InlineHtml(s) => cx.html = cx.farm.add(s).as_bytes(),
-                E::Start(Tag::HtmlBlock | Tag::Paragraph)
-                | E::End(TagEnd::HtmlBlock | TagEnd::Paragraph) => {}
-                E::Start(_) => eat_until_end(cx.parser),
-                E::End(_) => {
-                    unpeeker.unpeek(Some(event));
-                    break;
-                }
-                _ => {}
-            }
-        }
+            cx.html = cx.farm.add(html).as_bytes();
+        };
         return Some(());
     }
 
@@ -671,13 +655,24 @@ fn html_comment(cx: &mut HtmlContext<'_, '_, impl HtmlTags>) -> Option<()> {
         _ => false,
     };
 
-    while let Some(text) = cx.refill() {
-        if let Some(text) = text {
-            if raw_typst {
-                cx.result.extend_from_slice(text.as_bytes());
+    loop {
+        if cx.html.is_empty() {
+            use pulldown_cmark::Event as E;
+            match cx.parser.next() {
+                (Some(E::Text(text)), _) => {
+                    if raw_typst {
+                        cx.result.extend_from_slice(text.as_bytes());
+                    }
+                    continue;
+                }
+                (Some(E::Html(s) | E::InlineHtml(s)), _) => cx.html = cx.farm.add(s).as_bytes(),
+                (other, unpeeker) => {
+                    unpeeker.unpeek(other);
+                    break;
+                }
             }
-            continue;
         }
+
         if let Some(end) = memmem::find(cx.html, b"-->") {
             if raw_typst {
                 cx.result.extend_from_slice(&cx.html[..end]);
@@ -694,32 +689,44 @@ fn html_comment(cx: &mut HtmlContext<'_, '_, impl HtmlTags>) -> Option<()> {
     Some(())
 }
 
-impl<'input, T: HtmlTags> HtmlContext<'_, 'input, T> {
-    fn refill(&mut self) -> Option<Option<CowStr<'input>>> {
-        if !self.html.is_empty() {
-            return Some(None);
-        }
-        use pulldown_cmark::Event as E;
-        match self.parser.next() {
-            (Some(E::Text(s)), _) => Some(Some(s)),
-            (Some(E::Html(s) | E::InlineHtml(s)), _) => {
-                self.html = self.farm.add(s).as_bytes();
-                Some(None)
-            }
-            (other, unpeeker) => {
-                unpeeker.unpeek(other);
-                None
-            }
-        }
+/// Best-effort attempt to serialize events as a string.
+///
+/// The callback is called with `true` if the argument is HTML.
+fn serialize<'input>(
+    parser: &mut Unpeekable<pulldown_cmark::Parser<'input, BrokenLinkCallback>>,
+    mut f: impl FnMut(CowStr<'input>, bool),
+) {
+    while let Some(html) = serialize_until_html(parser, &mut f) {
+        f(html, true)
     }
 }
 
-fn eat_until_end(parser: &mut Unpeekable<pulldown_cmark::Parser<'_, BrokenLinkCallback>>) {
-    let mut layers = 1_u32;
-    while layers != 0 {
-        use pulldown_cmark::Event as E;
-        match parser.next().0.unwrap() {
+/// Best-effort attempt to serialize events as a string.
+///
+/// Returns `Some` if top-level HTML is encountered.
+/// The callback is called with `true` if the argument is HTML.
+fn serialize_until_html<'input>(
+    parser: &mut Unpeekable<pulldown_cmark::Parser<'input, BrokenLinkCallback>>,
+    mut f: impl FnMut(CowStr<'input>, bool),
+) -> Option<CowStr<'input>> {
+    let mut layers = 0_u32;
+    loop {
+        use pulldown_cmark::{Event as E, Tag, TagEnd};
+        let (event, unpeeker) = parser.next();
+        match event? {
+            E::Html(s) | E::InlineHtml(s) if layers == 0 => return Some(s),
+            E::Html(s) | E::InlineHtml(s) => f(s, true),
+            E::Text(s) | E::Code(s) | E::InlineMath(s) | E::DisplayMath(s) => f(s, false),
+            E::SoftBreak => f(CowStr::Borrowed(" "), false),
+            E::HardBreak => f(CowStr::Borrowed("\n"), false),
+            E::Start(Tag::Paragraph | Tag::HtmlBlock) => {}
+            E::End(TagEnd::HtmlBlock) => {}
+            E::End(TagEnd::Paragraph) => f(CowStr::Borrowed("\n\n"), false),
             E::Start(_) => layers += 1,
+            event @ E::End(_) if layers == 0 => {
+                unpeeker.unpeek(Some(event));
+                return None;
+            }
             E::End(_) => layers -= 1,
             _ => {}
         }
@@ -1209,8 +1216,8 @@ mod tests {
             "#image(\"https://example.org/\",alt:\"alt text\");",
         );
         assert_eq!(
-            render("![a![*b*]()`c`<p>  \nd\ne]()\n"),
-            "#image(\"\",alt:\"abc<p> d e\");"
+            with_math("![a![*b*]()`c`<p>  \nd\ne$f$]()\n"),
+            "#image(\"\",alt:\"abc<p>\nd ef\");"
         );
         assert_eq!(render("[x](#r)"), "#link(label(\"r\"))[x];");
     }
@@ -1393,12 +1400,12 @@ mod tests {
         );
         assert_eq!(
             with_html("x<script>&amp;\""),
-            "x#(html.script)((:),\"&\\\"\");"
+            "x#(html.script)((:),\"&\\\"\n\n\");"
         );
         assert_eq!(with_html("<title>&amp;\""), "#(html.title)((:),\"&\\\"\");");
         assert_eq!(
             with_html("x<title>&amp;amp;\""),
-            "x#(html.title)((:),\"&amp;\\\"\");"
+            "x#(html.title)((:),\"&amp;\\\"\n\n\");"
         );
         assert_eq!(
             with_html("<script>x</script</script>y"),
@@ -1409,8 +1416,8 @@ mod tests {
             "#(html.script)((:),\"\n\nx\");y"
         );
         assert_eq!(
-            with_html("<title>\n\nx</title>y"),
-            "#(html.title)((:),\"\n\");xy"
+            with_html("<title>\n\n- x</title>\n</title>y"),
+            "#(html.title)((:),\"\nx</title>\");y"
         );
     }
 
