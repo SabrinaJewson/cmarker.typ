@@ -1,7 +1,6 @@
-<!--typst-begin-exclude-->
+# cmarker.typ
 
-# cmarker
-<!--typst-end-exclude-->
+<!--raw-typst #align(center)[https://github.com/SabrinaJewson/cmarker.typ] -->
 
 This package enables you to write CommonMark Markdown,
 and import it directly into Typst.
@@ -111,7 +110,7 @@ The parameters are as follows:
 - `h1-level`:
 	The level that top-level headings in Markdown should get in Typst.
 	When set to zero,
-	top-level headings are treated as text,
+	top-level headings are treated as titles,
 	`##` headings become `=` headings,
 	`###` headings become `==` headings,
 	et cetera;
@@ -119,7 +118,7 @@ The parameters are as follows:
 	`#` headings become `==` headings,
 	`##` headings become `===` headings,
 	et cetera.
-	- Accepted values: Integers in the range [0, 255].
+	- Accepted values: Integers in the range [-128, 127].
 	- Default value: 1.
 
 - `raw-typst`:
