@@ -1192,7 +1192,10 @@ mod tests {
     #[test]
     fn heading() {
         assert_eq!(with_h1_level("x\n# H", -1), "x\n\nH");
-        assert_eq!(with_h1_level("# H", 0), "#set document(title:[H]);#title();");
+        assert_eq!(
+            with_h1_level("# H", 0),
+            "#set document(title:[H]);#title();"
+        );
         assert_eq!(with_h1_level("## H", 0), "\n= H\n#label(\"h\");");
         assert_eq!(with_h1_level("### H", 0), "\n== H\n#label(\"h\");");
         assert_eq!(with_h1_level("# H", 1), "\n= H\n#label(\"h\");");
