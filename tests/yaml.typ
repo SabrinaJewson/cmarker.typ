@@ -1,30 +1,30 @@
 #import "/test-runner/common.typ": run-cmarker-with-metadata, run-cmarker
 
 #let test-template(markdown, expects-metadata: none) = {
-  let (meta_raw, body) = run-cmarker-with-metadata(markdown, metadata-block: none)
+  let (meta-raw, body) = run-cmarker-with-metadata(markdown, metadata-block: none)
   assert(run-cmarker(markdown) == body, message: "`cmarker.render(markdown)` should be equal to the body of `cmarker.render-with-metadata(markdown, metadata-block: none)`")
 
-  let (meta_raw, body) = run-cmarker-with-metadata(markdown, metadata-block: "frontmatter-raw")
+  let (meta-raw, body) = run-cmarker-with-metadata(markdown, metadata-block: "frontmatter-raw")
   if expects-metadata == none {
-    assert(meta_raw == "", message: meta_raw + "!= \"\"")
+    assert(meta-raw == "", message: meta-raw + "!= \"\"")
   } else {
-    assert(meta_raw == expects-metadata, message: meta_raw + "!= \"" + expects-metadata + "\"")
+    assert(meta-raw == expects-metadata, message: meta-raw + "!= \"" + expects-metadata + "\"")
   }
 
-  let (meta_yaml, body) = run-cmarker-with-metadata(markdown, metadata-block: "frontmatter-yaml")
+  let (meta-yaml, body) = run-cmarker-with-metadata(markdown, metadata-block: "frontmatter-yaml")
   if expects-metadata == none {
-    assert(meta_yaml == none, message: "Expects `meta_yaml == none` but got type(meta_yaml) == " + str(type(meta_raw)))
+    assert(meta-yaml == none, message: "Expects `meta-yaml == none` but got type(meta-yaml) == " + str(type(meta-raw)))
   } else {
-    assert(type(meta_yaml) == dictionary, message: "Expects `type(meta_yaml) == dictionary` but got type(meta_yaml) == " + str(type(meta_raw)))
-    assert(meta_yaml == yaml(bytes(expects-metadata)),
-      message: meta_yaml.pairs().map(x => "(" + x.at(0) + ": " + x.at(1) + ")").first()
+    assert(type(meta-yaml) == dictionary, message: "Expects `type(meta-yaml) == dictionary` but got type(meta-yaml) == " + str(type(meta-raw)))
+    assert(meta-yaml == yaml(bytes(expects-metadata)),
+      message: meta-yaml.pairs().map(x => "(" + x.at(0) + ": " + x.at(1) + ")").first()
                   + " != "
                   + yaml(bytes(expects-metadata)).pairs().map(x => "(" + x.at(0) + ": " + x.at(1) + ")").first()
     )
   }
 
   html.elem("hr")
-  meta_raw
+  meta-raw
   html.elem("hr")
 
   body

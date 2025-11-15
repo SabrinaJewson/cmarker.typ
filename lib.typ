@@ -130,17 +130,17 @@
         ..rows.body.map(r => r.len()),
         ..rows.footer.map(r => r.len()),
       )
-      let start_i = 0
+      let start-i = 0
       for (k, section) in rows {
         rows.insert(k, section.enumerate().map(((i, row)) => {
           row = row.map(((_, attrs, td)) => {
             let rowspan = int(attrs.at("rowspan", default: "1"))
             let colspan = int(attrs.at("colspan", default: "1"))
-            table.cell(rowspan: rowspan, colspan: colspan, y: start_i + i, td)
+            table.cell(rowspan: rowspan, colspan: colspan, y: start-i + i, td)
           })
           row
         }))
-        start_i += section.len()
+        start-i += section.len()
       }
       let args = ()
       if rows.header.len() != 0 {
@@ -246,33 +246,33 @@
     if (not filecontent.starts-with("---\n")) or filecontent.starts-with("---\n\n") {
       return ("", filecontent)
     }
-    let original_filecontent = filecontent
+    let original-filecontent = filecontent
     filecontent = filecontent.slice("---\n".len())
-    let allowed_closing_delimiters = (
+    let allowed-closing-delimiters = (
       "\n---\n",
       "\n...\n"
     )
-    // Checks for position of `allowed_closing_delimiters`
+    // Checks for position of `allowed-closing-delimiters`
     // and returns the first instance between them
     // with info on position and delimiter, e.g: (10, "\n---\n").
     // If no instance is found, returns (none, "")
-    let end = allowed_closing_delimiters
+    let (end, closing-delim) = allowed-closing-delimiters
       .map(delim => (filecontent.position(delim), delim))
-      .filter(pos => pos.at(0) != none)
-      .sorted(key: x => x.at(0))
+      .filter(((pos, _)) => pos != none)
+      .sorted(key: ((pos, _)) => pos)
       .at(0, default: (none, ""))
 
     // No metadata-block is detected.
-    if end == (none, "") {
-      return ("", original_filecontent)
+    if end == none {
+      return ("", original-filecontent)
     }
 
-    let content = filecontent.slice(end.at(0) + end.at(1).len())
-    let frontmatter = filecontent.slice(0, end.at(0))
+    let content = filecontent.slice(end + closing-delim.len())
+    let frontmatter = filecontent.slice(0, end)
     return (frontmatter, content)
   }
 
-  let (markdown_frontmatter, markdown) = if metadata-block != none {
+  let (markdown-frontmatter, markdown) = if metadata-block != none {
      extract-frontmatter(markdown)
   } else {
     (none, markdown)
@@ -285,20 +285,13 @@
     eval(rendered, mode: "markup", scope: scope)
   }
 
-  let allowed_metadata-block_value = ("frontmatter-raw", "frontmatter-yaml", none)
-  if not metadata-block in allowed_metadata-block_value {
-    assert(false
-      , message: "Invalid metadata-block value (`\""
-                  + metadata-block
-                  + "\"`). Allowed values are: "
-                  + allowed_metadata-block_value
-                    .map(x => if x == none {"`none`"} else {"`\"" + x + "\"`"}).join(", "))
-  }
-
   let metadata-block-content = if metadata-block == "frontmatter-raw" {
-    markdown_frontmatter
+    markdown-frontmatter
   } else if metadata-block == "frontmatter-yaml" {
-    yaml(bytes(markdown_frontmatter))
+    yaml(bytes(markdown-frontmatter))
+  } else if metadata-block != none {
+    let message = "invalid metadata-block value `" + metadata-block + "` (expected `frontmatter-raw` or `frontmatter-yaml`)"
+    assert(false, message: message)
   }
 
   (metadata-block-content, body)

@@ -280,17 +280,23 @@ The `render-with-metadata` functions works the same as `render` with two excepti
 1. This function returns `(meta, body)`. This allows the user to freely manipulate the metadata.
 	```typc
 	#let (meta, body) = render-with-metadata(input)
+	// `body` will be the same as:
 	#let body = render(input)
 	```
 2. This function has an extra argument: `metadata-block`. The other arguments are the same as `render`.
 
 - `metadata-block`:
-	How to parse the metadata block. This function only accepts a single metadata block at the beginning of the document.
-	Multiple metadata blocks are not yet supported.
-	If `none`, the metadata block will not be parsed. The resulting content is the same as using `render`.
-	If `frontmatter-raw`, the metadata block is parsed and returned as a string.
-	If `frontmatter-yaml`, the metadata block is parsed and returned as a dictionary if it is a valid yaml string.
-	- Accepted values: `"frontmatter-raw"`, `"frontmatter-yaml"`, or `none`.
+	How to parse the metadata block.
+	Only a single metadata block at the beginning of the document is supported;
+	metadata blocks not at the start will be ignored.
+	If `none`, the metadata block will not be parsed.
+	The behaviour is the same as using `render`.
+	- Accepted values:
+		- `"frontmatter-raw"`:
+			Parse the metadata block and return it as a string.
+		- `"frontmatter-yaml"`:
+			Parsed the metadata block as YAML and return it as a dictionary.
+		- `none`.
 	- Default value: `none`.
 
 ## Resolving Paths Correctly
@@ -573,5 +579,6 @@ And having them span the page width:
 	which produces the `plugin.wasm` necessary to use this.
 - Compile examples with `typst compile examples/{name}.typ`.
 - Compile this README to PDF with `typst compile README.typ`.
-- Run tests with `cargo test --workspace`. Consult `test-runner/main.typ` for a guide on writing tests.
+- Run tests with `cargo test --workspace`.
+	Consult `test-runner/main.rs` for a guide on writing tests.
 - Fuzz the library with `cargo +nightly fuzz run fuzz`.
