@@ -24,13 +24,6 @@
 #show sub: it => html.elem("sub", it.body)
 #show strike: it => html.elem("s", it.body)
 #show highlight: it => html.elem("mark", it.body)
-#show footnote: it => {
-  if type(it.body) == label {
-    it
-  } else {
-    html.elem("div", attrs: (class: "footnote-definition"), it.body)
-  }
-}
 #show table: it => {
   if type(it.align) != array {
     return it
