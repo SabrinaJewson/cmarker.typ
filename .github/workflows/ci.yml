@@ -27,5 +27,22 @@
                 { "run": "cargo fmt --all -- --check" },
             ],
         },
+        "fuzz": {
+            "runs-on": "ubuntu-latest",
+            "steps": [
+                { "uses": "actions/checkout@v4" },
+                { "uses": "dtolnay/rust-toolchain@nightly" },
+                {
+                    "uses": "robinraju/release-downloader@v1",
+                    "with": {
+                        "repository": "rust-fuzz/cargo-fuzz",
+                        "tag": "0.13.1",
+                        "fileName": "cargo-fuzz-0.13.1-x86_64-unknown-linux-musl.tar.gz",
+                        "extract": true,
+                    },
+                },
+                { "run": "./cargo-fuzz run fuzz --target=x86_64-unknown-linux-gnu -- -max_total_time=10" },
+            ],
+        },
     },
 }
