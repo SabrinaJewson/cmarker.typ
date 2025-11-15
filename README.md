@@ -182,6 +182,7 @@ The parameters are as follows:
 		`<blockquote>`,
 		`<figure>`,
 		`<figcaption>`,
+		`<svg>`,
 		`<img>`.
 
 	For example, the following code
@@ -313,7 +314,7 @@ one can override the `image` function in the scope the Typst code is evaluated.
 
 #cmarker.render(
   read("yourfile.md"),
-  scope: (image: (path, alt: none) => image(path, alt: alt))
+  scope: (image: (source, alt: none, format: auto) => image(source, alt: alt, format: format))
 )
 ```
 

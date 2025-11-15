@@ -185,6 +185,24 @@
     img: ("void", (attrs) => scope.at("image", default: image)(attrs.src, alt: attrs.at("alt", default: none))),
     blockquote: (attrs, body) => scope.at("quote", default: quote)(block: true, body),
 
+    svg: ("raw-text", (attrs, body) => {
+      let escape(s) = {
+        for c in s {
+          if c == "\"" {
+            "&quot;"
+          } else if c == "&" {
+            "&amp;"
+          } else {
+            c
+          }
+        }
+      }
+
+      let attrs = attrs.pairs().map(((k, v)) => k + "=\"" + escape(v) + "\"").join(" ")
+      let svg = "<svg " + attrs + ">" + body + "</svg>"
+      scope.at("image", default: image)(bytes(svg), format: "svg")
+    }),
+
     ..html,
   )
 

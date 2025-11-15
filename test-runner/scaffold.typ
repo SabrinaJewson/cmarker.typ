@@ -14,11 +14,15 @@
   }
 }
 #show image: it => {
-  let attrs = (src: it.source)
-  if it.alt != none {
-    attrs.alt = it.alt
+  if type(it.source) == str {
+    let attrs = (src: it.source)
+    if it.alt != none {
+      attrs.alt = it.alt
+    }
+    html.elem("img", attrs: attrs)
+  } else {
+    it
   }
-  html.elem("img", attrs: attrs)
 }
 #show super: it => html.elem("sup", it.body)
 #show sub: it => html.elem("sub", it.body)
@@ -42,7 +46,7 @@
     raw-typst: true,
     math: (text, block: true) => raw(block: block, text, lang: "math"),
     scope: (
-      image: (path, alt: none) => image(path, alt: alt),
+      image: (path, alt: none, format: auto) => image(path, alt: alt, format: format),
       rule: () => html.elem("hr"),
     ),
   )
