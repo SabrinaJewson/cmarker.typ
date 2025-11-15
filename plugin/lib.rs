@@ -48,7 +48,7 @@ fn render(markdown: &[u8], options: &[u8]) -> Result<Vec<u8>, String> {
         label_use_prefix,
         heading_labels: cmarker_typst::HeadingLabels::from_u8(heading_labels).unwrap(),
         flags,
-        h1_level,
+        h1_level: h1_level.cast_signed(),
     };
 
     cmarker_typst::run(markdown, options)

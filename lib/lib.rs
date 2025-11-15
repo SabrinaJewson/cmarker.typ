@@ -10,7 +10,7 @@ pub struct Options<'a, H: HtmlTags> {
     pub label_use_prefix: &'a str,
     pub heading_labels: HeadingLabels,
     pub flags: Flags,
-    pub h1_level: u8,
+    pub h1_level: i8,
 }
 
 pub trait HtmlTags {
@@ -114,23 +114,42 @@ pub fn run<H: HtmlTags>(markdown: &str, options: Options<'_, H>) -> Result<Vec<u
                 classes: _,
                 attrs: _,
             }) => {
-                result.push(b'\n');
-                let equal_signs = level as usize - 1 + usize::from(options.h1_level);
-                result.resize(result.len() + equal_signs, b'=');
-                result.push(b' ');
+                let heading_level = level as i16 - 1 + i16::from(options.h1_level);
+                match heading_level {
+                    ..=-1 => {}
+                    0 => {
+                        result.extend_from_slice(b"#set document(title:");
+                        start_scope(&mut open_tags, &mut result);
+                    }
+                    n @ 1.. => {
+                        result.push(b'\n');
+                        result.resize(result.len() + (n as usize), b'=');
+                        result.push(b' ');
+                    }
+                }
 
                 // Nested headings are impossible
                 assert!(current_header_label.is_none());
 
-                if equal_signs != 0 {
+                if heading_level > 0 {
                     current_header_label = Some(Label::default());
                 }
             }
-            E::End(TagEnd::Heading(_)) => {
+            E::End(TagEnd::Heading(level)) => {
+                let heading_level = level as i16 - 1 + i16::from(options.h1_level);
+
                 if let Some(label) = current_header_label.take() {
                     label_tracker.write_after_heading(label, &mut result);
                 }
-                result.extend_from_slice(b"\n");
+
+                match heading_level {
+                    ..=-1 => {}
+                    0 => {
+                        end_scope(&mut open_tags, &mut result);
+                        result.extend_from_slice(b");#title();");
+                    }
+                    1.. => result.extend_from_slice(b"\n"),
+                }
             }
 
             E::Start(Tag::BlockQuote(_)) => {
@@ -1172,7 +1191,8 @@ use farm::Farm;
 mod tests {
     #[test]
     fn heading() {
-        assert_eq!(with_h1_level("# H", 0), "\n H");
+        assert_eq!(with_h1_level("x\n# H", -1), "x\n\nH");
+        assert_eq!(with_h1_level("# H", 0), "#set document(title:[H]);#title();");
         assert_eq!(with_h1_level("## H", 0), "\n= H\n#label(\"h\");");
         assert_eq!(with_h1_level("### H", 0), "\n== H\n#label(\"h\");");
         assert_eq!(with_h1_level("# H", 1), "\n= H\n#label(\"h\");");
@@ -1618,7 +1638,7 @@ mod tests {
     }
 
     #[track_caller]
-    fn with_h1_level(s: &str, h1_level: u8) -> String {
+    fn with_h1_level(s: &str, h1_level: i8) -> String {
         let mut options = default_options();
         options.h1_level = h1_level;
         render_with(s, options)
@@ -1691,7 +1711,7 @@ mod tests {
     fn render_with(s: &str, options: Options<'_, impl HtmlTags>) -> String {
         let s = String::from_utf8(super::run(s, options).unwrap()).unwrap();
         if let Some(e) = typst_syntax::parse(&s).errors().into_iter().next() {
-            panic!("{}", e.message);
+            panic!("{}\nsource code: ```\n{s}\n```", e.message);
         }
         s
     }

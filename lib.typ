@@ -74,7 +74,15 @@
   let label-use-prefix = if prefix-label-uses { label-prefix } else { "" }
 
   let heading-fn(level) = (attrs, body) => {
-    labelify(scope.at("heading", default: heading)(level: h1-level + level, body), attrs)
+    let level = h1-level + level
+    if level < 0 {
+      body
+    } else if level == 0 {
+      set document(title: body)
+      title()
+    } else {
+      labelify(scope.at("heading", default: heading)(level: level, body), attrs)
+    }
   }
 
   html = (
@@ -200,7 +208,8 @@
   }
 
   assert(type(h1-level) == int, message: "h1-level must be an integer")
-  assert(0 <= h1-level and h1-level <= 255, message: "h1-level must be in the range [0, 255]")
+  assert(-128 <= h1-level and h1-level <= 127, message: "h1-level must be in the range [-128, 127]")
+  h1-level = if h1-level < 0 { 256 + h1-level } else { h1-level }
 
   let options-bytes = (flags, h1-level, heading-labels)
 
