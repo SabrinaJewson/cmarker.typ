@@ -5,13 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
   </head>
   <body>
-    <div class="footnote-definition">
+    <div id="before" class="footnote-definition">
       <p>xyz</p>
     </div>
-    <p>Footnotes 1, 2, 1:<sup>1</sup><sup>2</sup><sup>1</sup></p>
-    <div class="footnote-definition">
+    <p>Footnotes 1, 2, 1:<a href="#loc-1" role="doc-noteref"><sup>1</sup></a><a href="#loc-2" role="doc-noteref"><sup>2</sup></a><a href="#loc-1" role="doc-noteref"><sup>1</sup></a></p>
+    <div id="after" class="footnote-definition">
       <p>abc <strong>bold text in footnote</strong></p>
     </div>
-    <p>Another footnote:<sup>1</sup></p>
+    <p>Another footnote:<a href="#loc-1" role="doc-noteref"><sup>1</sup></a></p>
+    <section role="doc-endnotes">
+      <ol style="list-style-type: none">
+        <li id="loc-1">
+          <p><a href="#before" role="doc-backlink"><sup>1</sup></a>xyz</p>
+        </li>
+        <li id="loc-2">
+          <p><a href="#after" role="doc-backlink"><sup>2</sup></a>abc <strong>bold text in footnote</strong></p>
+        </li>
+      </ol>
+    </section>
   </body>
 </html>
