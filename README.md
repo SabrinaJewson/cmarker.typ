@@ -14,7 +14,7 @@ and import it directly into Typst.
 <td>
 
 ```typst
-#import "@preview/cmarker:0.1.7"
+#import "@preview/cmarker:0.1.8"
 
 #cmarker.render(read("simple.md"))
 ```
@@ -310,7 +310,7 @@ To fix this,
 one can override the `image` function in the scope the Typst code is evaluated.
 
 ```typst
-#import "@preview/cmarker:0.1.7"
+#import "@preview/cmarker:0.1.8"
 
 #cmarker.render(
   read("yourfile.md"),
