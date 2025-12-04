@@ -269,34 +269,25 @@
   // [1] delimited by a line of three hyphens (---) at the top
   // [2] and a line of three hyphens (---) or three dots (...) at the bottom.
   // [3] The initial line --- must not be followed by a blank line.
-  let extract-frontmatter(filecontent) = {
-    if (not filecontent.starts-with("---\n")) or filecontent.starts-with("---\n\n") {
-      return ("", filecontent)
-    }
-    let original-filecontent = filecontent
-    filecontent = filecontent.slice("---\n".len())
-    let allowed-closing-delimiters = (
-      "\n---\n",
-      "\n...\n"
-    )
-    // Checks for position of `allowed-closing-delimiters`
-    // and returns the first instance between them
-    // with info on position and delimiter, e.g: (10, "\n---\n").
-    // If no instance is found, returns (none, "")
-    let (end, closing-delim) = allowed-closing-delimiters
-      .map(delim => (filecontent.position(delim), delim))
-      .filter(((pos, _)) => pos != none)
-      .sorted(key: ((pos, _)) => pos)
-      .at(0, default: (none, ""))
+  let extract-frontmatter(s) = {
+    let original = s
 
-    // No metadata-block is detected.
-    if end == none {
-      return ("", original-filecontent)
+    let start-match = s.match(regex("^---[ \t\r]*\n"))
+    if start-match == none {
+      return ("", original)
+    }
+    s = s.slice(start-match.end)
+
+    if s.starts-with(regex("[ \t\r]*\n")) {
+      return ("", original)
     }
 
-    let content = filecontent.slice(end + closing-delim.len())
-    let frontmatter = filecontent.slice(0, end)
-    return (frontmatter, content)
+    let end-match = s.match(regex("\n(---|\.\.\.)[ \t\r]*\n"))
+    if end-match == none {
+      return ("", original)
+    }
+
+    return (s.slice(0, end-match.start), s.slice(end-match.end))
   }
 
   let (markdown-frontmatter, markdown) = if metadata-block != none {

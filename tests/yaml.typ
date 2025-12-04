@@ -46,10 +46,10 @@
 #test-template(md.join("\n"), expects-metadata: "title: 'metadata-test'")
 
 #let md = (
-  "---",
+  "---\t \r",
   "title: 'metadata-test'",
-  "...",
-  "content with simple metadata and `...` closing delimiter"
+  "... \r\t",
+  "content with simple metadata, `...` closing delimiter, and whitespace"
 )
 
 #test-template(md.join("\n"), expects-metadata: "title: 'metadata-test'")
@@ -67,7 +67,7 @@
 
 #let md = (
   "---",
-  "",
+  "\t",
   "title: 'metadata-test'",
   "---",
   "content that starts with \"---\\n\\n\" has no metadata-block",
