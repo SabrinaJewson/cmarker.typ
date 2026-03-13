@@ -528,6 +528,47 @@ This is a Markdown quirk – `![alt](image path.png)` is seen as plain text
 instead of an image.
 To fix it, use `![alt](<image path.png>)`.
 
+### My image caption is not being displayed!
+
+In the Markdown image syntax, the `text` in
+`![text](image.png)` is used to specify the image’s alt text,
+_not_ its caption.
+This means that `text` won’t be visible when viewing the PDF normally,
+and only appears inside a screen reader.
+If you want to set a caption for the image,
+you have to use `<figcaption>` explicitly.
+For example:
+
+```md
+<figure>
+
+![alt text](image.png)
+<figcaption>caption text</figcaption>
+</figure>
+```
+
+You can alternatively transform all alt text into captions automatically:
+
+```typst
+#cmarker.render(
+  read("example.md"),
+  scope: (
+    image: (source, alt: none, format: auto) => {
+      figure(image(source, alt: alt, format: format), caption: alt)
+    },
+  ),
+)
+```
+
+However, this has disadvantage that
+you can’t use markup in the caption,
+because alt text is just a plain string and not content.
+(In theory, Markdown supports markup in image alt text,
+but our Markdown parser stringifies it anyway
+because Typst only supports strings in alt text.
+It’s possible we could add extra functionality for this use case.)
+
+
 ### My Markdown after an open HTML tag is getting rendered as text!
 
 Another Markdown quirk –
