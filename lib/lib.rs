@@ -157,6 +157,13 @@ pub fn run<H: HtmlTags>(markdown: &str, options: Options<'_, H>) -> Result<Vec<u
                 start_scope(&mut open_tags, &mut result);
             }
             E::End(TagEnd::BlockQuote(_)) => {
+                // Prevent blockquotes having a paragraph break before the end.
+                //
+                // See: https://github.com/SabrinaJewson/cmarker.typ/issues/63
+                while result.ends_with(b"\n") {
+                    result.pop();
+                }
+
                 end_scope(&mut open_tags, &mut result);
                 result.extend_from_slice(b"\n\n");
             }
@@ -1385,7 +1392,7 @@ mod tests {
         );
         assert_eq!(
             render("[^a]:>[^b]:\n  >[^a][^b]"),
-            "#quote(block:true)[#footnote[#quote(block:true)[]\n\n]#label(\"a\");#footnote[]#label(\"b\");\n\n]"
+            "#quote(block:true)[#footnote[#quote(block:true)[]\n\n]#label(\"a\");#footnote[]#label(\"b\");]"
         );
         assert_eq!(render("(\n[^x]:\n[^x]"), "(\n\n#footnote[]#label(\"x\");");
     }
@@ -1409,10 +1416,10 @@ mod tests {
 
     #[test]
     fn blockquote() {
-        assert_eq!(render("> *q*"), "#quote(block:true)[#emph[q];\n\n]");
+        assert_eq!(render("> *q*"), "#quote(block:true)[#emph[q];]");
         assert_eq!(
             render("> Quoted\n> > Nested"),
-            "#quote(block:true)[Quoted\n\n#quote(block:true)[Nested\n\n]\n\n]"
+            "#quote(block:true)[Quoted\n\n#quote(block:true)[Nested]]"
         );
     }
 
