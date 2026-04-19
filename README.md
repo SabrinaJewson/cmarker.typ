@@ -39,6 +39,16 @@ in [Markdown](https://github.com/SabrinaJewson/cmarker.typ/tree/main#cmarker)
 and [rendered PDF](https://github.com/SabrinaJewson/cmarker.typ/blob/main/README.pdf)
 formats.
 
+## Contents
+
+2. [API](#api)
+2. [Resolving paths correctly](#resolving-paths-correctly)
+2. [References, labels, figures and citations](#references-labels-figures-and-citations)
+2. [Supported Markdown syntax](#supported-markdown-syntax)
+2. [Interleaving Markdown and Typst](#interleaving-markdown-and-typst)
+2. [FAQ](#faq)
+2. [Development](#development)
+
 ## API
 
 We offer two functions:
@@ -63,198 +73,209 @@ render(
 ) -> content
 ```
 
-The parameters are as follows:
-- `markdown`:
-	The [CommonMark](https://spec.commonmark.org/0.30/) Markdown string to be processed.
-	Parsed with the [pulldown-cmark](https://docs.rs/pulldown-cmark) Rust library.
-	You can set this to `read("somefile.md")` to import an external markdown file;
-	see the
-	[documentation for the read function](https://typst.app/docs/reference/data-loading/read/).
-	- Accepted values: Strings and raw text code blocks.
-	- Required.
+The `render` function renders the given Markdown and returns content.
 
-- `smart-punctuation`:
-	Automatically convert ASCII punctuation to Unicode equivalents:
-	- nondirectional quotations (" and ') become directional (“” and ‘’);
-	- three consecutive full stops (...) become ellipses (…);
-	- two and three consecutive hypen-minus signs (-- and ---)
-		become en and em dashes (– and —).
+#### `markdown`
 
-	Note that although Typst also offers this functionality,
-	this conversion is done through the Markdown parser rather than Typst.
-	- Accepted values: Booleans.
-	- Default value: `true`.
+The [CommonMark](https://spec.commonmark.org/0.30/) Markdown string to be processed.
+Parsed with the [pulldown-cmark](https://docs.rs/pulldown-cmark) Rust library.
+You can set this to `read("somefile.md")` to import an external markdown file;
+see the
+[documentation for the read function](https://typst.app/docs/reference/data-loading/read/).
+- Accepted values: Strings and raw text code blocks.
+- Required.
 
-- `math`:
-	A callback to be used when equations are encountered in the Markdown,
-	or `none` if it should be treated as normal text.
-	Because Typst does not support LaTeX equations natively,
-	the user must configure this.
-	- Accepted values:
-		Functions that take a boolean argument named `block` and a positional string argument
-		(often, the `mitex` function from
-		[the mitex package](https://typst.app/universe/package/mitex)),
-		or `none`.
-	- Default value: `none`.
+#### `smart-punctuation`
 
-	For example, to render math equation as a Typst math block,
-	one can use:
-	```typst
-	#import "@preview/mitex:0.2.6": mitex
-	#cmarker.render(`$\int_1^2 x \mathrm{d} x$`, math: mitex)
-	```
-	<!--raw-typst
-	which renders as: $integral_1^2 x dif x$
-	-->
+Whether to automatically convert ASCII punctuation to Unicode equivalents:
+- nondirectional quotations (" and ') become directional (“” and ‘’);
+- three consecutive full stops (...) become ellipses (…);
+- two and three consecutive hypen-minus signs (-- and ---)
+	become en and em dashes (– and —).
 
-- `h1-level`:
-	The level that top-level headings in Markdown should get in Typst.
-	When set to zero,
-	top-level headings are treated as titles,
-	`##` headings become `=` headings,
-	`###` headings become `==` headings,
-	et cetera;
-	when set to `2`,
-	`#` headings become `==` headings,
-	`##` headings become `===` headings,
-	et cetera.
-	- Accepted values: Integers in the range [-128, 127].
-	- Default value: 1.
+Note that although Typst also offers this functionality,
+this conversion is done through the Markdown parser rather than Typst.
+- Accepted values: Booleans.
+- Default value: `true`.
 
-- `raw-typst`:
-	Whether to allow raw Typst code to be injected into the document via HTML comments.
-	If disabled, the comments will act as regular HTML comments.
-	- Accepted values: Booleans.
-	- Default value: `true`.
+#### `math`
 
-	For example, when this is enabled, `<!--raw-typst #circle(radius: 10pt) -->`
-	will result in a circle in the document
-	(but only when rendered through Typst).
-	See also `<!--typst-begin-exclude-->` and `<!--typst-end-exclude-->`,
-	which is the inverse of this.
+A callback to be used when equations are encountered in the Markdown,
+or `none` if it should be treated as normal text.
+Because Typst does not support LaTeX equations natively,
+the user must configure this.
+- Accepted values:
+	Functions that take a boolean argument named `block` and a positional string argument
+	(often, the `mitex` function from
+	[the mitex package](https://typst.app/universe/package/mitex)),
+	or `none`.
+- Default value: `none`.
 
-- `html`:
-	The dictionary of HTML elements that cmarker will support.
-	- Accepted values:
-		Dictionaries whose keys are the tag name (without the surrounding `<>`)
-		and whose values can be:
-		- `("normal", (attrs, body) => [/* … */])`:
-			Defines a normal element,
-			where `attrs` is a dictionary of strings, `body` is content,
-			and the function returns content.
-		- `("void", (attrs) => [/* … */])`:
-			Defines a void element (e.g. `<br>`, `<img>`, `<hr>`).
-		- `("raw-text", (attrs, body) => [/* … */])`:
-			Defines a raw text element (e.g. `<script>`, `<style>`),
-			where `body` is a string.
-		- `("escapable-raw-text", (attrs, body) => [/* … */])`:
-			Defines an escapable raw text element (e.g. `<textarea>`),
-			where `body` is a string.
-		- `(attrs, body) => [/* … */]`: Shorthand for
-			`("normal", (attrs, body) => [/* … */])`.
-	- Default value: `(:)`.
-	- Overridable keys:
-		The following HTML elements are provided by default,
-		but you are free to override them:
-		`<sub>`,
-		`<sup>`,
-		`<mark>`,
-		`<h1>`–`<h6>`,
-		`<ul>`,
-		`<ol>`,
-		`<li>`,
-		`<dl>`,
-		`<dt>`,
-		`<dd>`,
-		`<table>`,
-		`<thead>`,
-		`<tfoot>`,
-		`<tr>`,
-		`<th>`,
-		`<td>`,
-		`<hr>`,
-		`<a>`,
-		`<em>`,
-		`<strong>`,
-		`<s>`,
-		`<code>`,
-		`<br>`,
-		`<blockquote>`,
-		`<figure>`,
-		`<figcaption>`,
-		`<svg>`,
-		`<img>`.
+For example, to render math equation as a Typst math block,
+one can use:
+```typst
+#import "@preview/mitex:0.2.6": mitex
+#cmarker.render(`$\int_1^2 x \mathrm{d} x$`, math: mitex)
+```
+<!--raw-typst
+which renders as: $integral_1^2 x dif x$
+-->
 
-	For example, the following code
-	would allow you to write `<circle radius="25">` to render a 25pt circle:
+#### `h1-level`
 
-	```typst
-	#cmarker.render(read("input.md"), html: (
-	  circle: ("void", attrs => circle(radius: int(attrs.radius) * 1pt))
-	))
-	```
+The level that top-level headings in Markdown should get in Typst.
+When set to zero,
+top-level headings are treated as titles,
+`##` headings become `=` headings,
+`###` headings become `==` headings,
+et cetera;
+when set to `2`,
+`#` headings become `==` headings,
+`##` headings become `===` headings,
+et cetera.
+- Accepted values: Integers in the range [-128, 127].
+- Default value: 1.
 
-- `label-prefix`:
-	If present, any labels autogenerated by footnotes and headings will be prefixed by this string.
-	This is useful to avoid collisions.
-	- Accepted values: A valid label or the empty string.
-	- Default value: The empty string.
+#### `raw-typst`
 
-- `prefix-label-uses`:
-	Whether references to labels such as `[@label]` and `[link](#label)`
-	should be prefixed by `label-prefix`.
-	- Accepted values: Booleans.
-	- Default value: `true`.
+Whether to allow raw Typst code to be injected into the document via HTML comments.
+If disabled, the comments will act as regular HTML comments.
+- Accepted values: Booleans.
+- Default value: `true`.
 
-- `heading-labels`:
-	How the cases of labels autogenerated by headings should be transformed.
-	The label prefix (given in `label-prefix`) will **not** be transformed.
-	- Accepted values:
-		- `"github"`:
-			Match [GitHub’s slugification algorithm](https://github.com/Flet/github-slugger):
-			strip out invalid characters, lowercase everything, convert ASCII spaces to hyphens,
-			and number duplicate headings to avoid collisions.
-			For example, `# My heading!` will become `<my-heading>`.
-		- `"jupyter"`:
-			Match [Jupyter’s slugification algorithm](https://github.com/jupyterlab/jupyterlab/blob/b3094f1156ad67e23f91f0cc8cc676123c8eb448/packages/rendermime/src/renderers.ts#L400):
-			just convert ASCII spaces to hyphens.
-			For example, `# My heading!` will become `<My-heading!>`.
-			Unlike the real Jupyter, we also number duplicate headings;
-			but this shouldn’t have any difference in practice since
-			Jupyter doesn’t allow referring to duplicate headings anyway.
-	- Default value: `"github"`.
+For example, when this is enabled, `<!--raw-typst #circle(radius: 10pt) -->`
+will result in a circle in the document
+(but only when rendered through Typst).
+See also
+[`<!--typst-begin-exclude-->` and `<!--typst-end-exclude-->`](#interleaving-markdown-and-typst),
+which is the inverse of this.
 
-- `scope`:
-	A dictionary providing the context in which the evaluated Typst code runs.
-	It is useful to pass values in to code inside `<!--raw-typst-->` blocks,
-	but can also be used to override element functions generated by cmarker itself.
-	- Accepted values: Any dictionary.
-	- Default value: `(:)`.
-	- Overridable keys:
-		- All built-in Typst functions.
-		- `rule`:
-			Expected to be a function returning content.
-			Will be used when thematic breaks (`---` in Markdown) are encountered.
-			Defaults to `line.with(length: 100%)`.
+#### `html`
 
-- `show-source`:
-	A debugging tool.
-	When set to `true`, the Typst code that would otherwise have been displayed
-	will be instead rendered in a code block.
-	- Accepted values: Booleans.
-	- Default value: `false`.
+The dictionary of HTML elements that cmarker will support.
+- Accepted values:
+	Dictionaries whose keys are the tag name (without the surrounding `<>`)
+	and whose values can be:
+	- `("normal", (attrs, body) => [/* … */])`:
+		Defines a normal element,
+		where `attrs` is a dictionary of strings, `body` is content,
+		and the function returns content.
+	- `("void", (attrs) => [/* … */])`:
+		Defines a void element (e.g. `<br>`, `<img>`, `<hr>`).
+	- `("raw-text", (attrs, body) => [/* … */])`:
+		Defines a raw text element (e.g. `<script>`, `<style>`),
+		where `body` is a string.
+	- `("escapable-raw-text", (attrs, body) => [/* … */])`:
+		Defines an escapable raw text element (e.g. `<textarea>`),
+		where `body` is a string.
+	- `(attrs, body) => [/* … */]`: Shorthand for
+		`("normal", (attrs, body) => [/* … */])`.
+- Default value: `(:)`.
+- Overridable keys:
+	The following HTML elements are provided by default,
+	but you are free to override them:
+	`<sub>`,
+	`<sup>`,
+	`<mark>`,
+	`<h1>`–`<h6>`,
+	`<ul>`,
+	`<ol>`,
+	`<li>`,
+	`<dl>`,
+	`<dt>`,
+	`<dd>`,
+	`<table>`,
+	`<thead>`,
+	`<tfoot>`,
+	`<tr>`,
+	`<th>`,
+	`<td>`,
+	`<hr>`,
+	`<a>`,
+	`<em>`,
+	`<strong>`,
+	`<s>`,
+	`<code>`,
+	`<br>`,
+	`<blockquote>`,
+	`<figure>`,
+	`<figcaption>`,
+	`<svg>`,
+	`<img>`.
 
-- `blockquote`:
-	Deprecated!
-	This used to control how blockquotes were rendered,
-	but we now default to `quote(block: true)`.
-	If you want to override how blockquotes look,
-	either use `#show quote.where(block: true)`
-	or use `scope: (quote: …)`.
-	- Accepted values: Functions accepting content and returning content, or `none`.
-	- Default value: `none`.
+For example, the following code
+would allow you to write `<circle radius="25">` to render a 25pt circle:
 
-This function returns the rendered `content`.
+```typst
+#cmarker.render(read("input.md"), html: (
+  circle: ("void", attrs => circle(radius: int(attrs.radius) * 1pt))
+))
+```
+
+#### `label-prefix`
+
+If present, any labels autogenerated by footnotes and headings will be prefixed by this string.
+This is useful to avoid collisions.
+- Accepted values: A valid label or the empty string.
+- Default value: The empty string.
+
+#### `prefix-label-uses`
+
+Whether references to labels such as `[@label]` and `[link](#label)`
+should be prefixed by `label-prefix`.
+- Accepted values: Booleans.
+- Default value: `true`.
+
+#### `heading-labels`
+
+How the cases of labels autogenerated by headings should be transformed.
+The label prefix (given in `label-prefix`) will **not** be transformed.
+- Accepted values:
+	- `"github"`:
+		Match [GitHub’s slugification algorithm](https://github.com/Flet/github-slugger):
+		strip out invalid characters, lowercase everything, convert ASCII spaces to hyphens,
+		and number duplicate headings to avoid collisions.
+		For example, `# My heading!` will become `<my-heading>`.
+	- `"jupyter"`:
+		Match [Jupyter’s slugification algorithm](https://github.com/jupyterlab/jupyterlab/blob/b3094f1156ad67e23f91f0cc8cc676123c8eb448/packages/rendermime/src/renderers.ts#L400):
+		just convert ASCII spaces to hyphens.
+		For example, `# My heading!` will become `<My-heading!>`.
+		Unlike the real Jupyter, we also number duplicate headings,
+		but this shouldn’t have any difference in practice since
+		Jupyter doesn’t allow referring to duplicate headings anyway.
+- Default value: `"github"`.
+
+#### `scope`
+
+A dictionary providing the context in which the evaluated Typst code runs.
+It is useful to pass values in to code inside `<!--raw-typst-->` blocks,
+but can also be used to override element functions generated by cmarker itself.
+- Accepted values: Any dictionary.
+- Default value: `(:)`.
+- Overridable keys:
+	- All built-in Typst functions.
+	- `rule`:
+		Expected to be a function returning content.
+		Will be used when thematic breaks (`---` in Markdown) are encountered.
+		Defaults to `line.with(length: 100%)`.
+
+#### `show-source`
+
+A debugging tool.
+When set to `true`, the Typst code that would otherwise have been displayed
+will be instead rendered in a code block.
+- Accepted values: Booleans.
+- Default value: `false`.
+
+#### `blockquote`
+Deprecated!
+This used to control how blockquotes were rendered,
+but we now default to `quote(block: true)`.
+If you want to override how blockquotes look,
+either use `#show quote.where(block: true)`
+or use `scope: (quote: …)`.
+- Accepted values: Functions accepting content and returning content, or `none`.
+- Default value: `none`.
 
 ### render-with-metadata
 
@@ -285,21 +306,22 @@ The `render-with-metadata` functions works the same as `render` with two excepti
 	```
 2. This function has an extra argument: `metadata-block`. The other arguments are the same as `render`.
 
-- `metadata-block`:
-	How to parse the metadata block.
-	Only a single metadata block at the beginning of the document is supported;
-	metadata blocks not at the start will be ignored.
-	If `none`, the metadata block will not be parsed.
-	The behaviour is the same as using `render`.
-	- Accepted values:
-		- `"frontmatter-raw"`:
-			Parse the metadata block and return it as a string.
-		- `"frontmatter-yaml"`:
-			Parsed the metadata block as YAML and return it as a dictionary.
-		- `none`.
-	- Default value: `none`.
+#### `metadata-block`
 
-## Resolving Paths Correctly
+How to parse the metadata block.
+Only a single metadata block at the beginning of the document is supported;
+metadata blocks not at the start will be ignored.
+If `none`, the metadata block will not be parsed.
+The behaviour is the same as using `render`.
+- Accepted values:
+	- `"frontmatter-raw"`:
+		Parse the metadata block and return it as a string.
+	- `"frontmatter-yaml"`:
+		Parsed the metadata block as YAML and return it as a dictionary.
+	- `none`.
+- Default value: `none`.
+
+## Resolving paths correctly
 
 Because of how Typst handles paths,
 elements like images will by default resolve
@@ -318,14 +340,15 @@ one can override the `image` function in the scope the Typst code is evaluated.
 )
 ```
 
-## References, Labels, Figures and Citations
+## References, labels, figures and citations
 
 `cmarker.typ` integrates well with Typst’s native references and labels.
 Where in Typst you would write `@foo`, in Markdown you write `[@foo]`;
 where in Typst you would write `@foo[Chapter]`, in Markdown you’d write `[Chapter][@foo]`.
 You can also write `[some text](#foo)` to have “some text” be a link that points at `foo`.
 Headings are automatically given references according to their name,
-but lowercased and with spaces replaced by hyphens:
+but lowercased and with spaces replaced by hyphens
+(although this can be controlled with the [`heading-labels`](#heading-labels) option):
 
 ```md
 # My nice heading
@@ -367,34 +390,33 @@ Please refer to [@my-graph]. <!-- generates “Please refer to Figure 1.” -->
 ```
 
 If you encounter collision errors across multiple Markdown files,
-you can set the `label-prefix` option.
+you can set [the `label-prefix` option](#label-prefix).
 For example, setting
 `label-prefix: "file-a-"` will convert the label of
 `# My Heading` into `file-a-my-heading`.
 By default, references within the file will expect the unprefixed name;
-this can be changed by setting `prefix-label-uses: false`.
+this can be changed by setting [`prefix-label-uses: false`](#prefix-label-uses).
 
-## Supported Markdown Syntax
+## Supported Markdown syntax
 
 We support CommonMark with a couple extensions.
 
-- Paragraph breaks: Two newlines, i.e. one blank line.
-- Hard line breaks (used more in poetry than prose):
-	Put two spaces at the end of the line.
+### Line breaks
+
+A single newline becomes a space;
+two consecutive newlines (i.e. one blank line) give a paragraph break;
+two spaces before a newline gives a hard line break
+(used for example in poetry) –
+you can also write `<br>` to the same effect.
+
+### Formatting
+
 - *Emphasis*: `*emphasis*` or `_emphasis_`
 - **Strong**: `**strong**` or `__strong__`
 - ~Strikethrough~: `~strikethrough~`
 - <sub>Subscript</sub>: `<sub>subscript</sub>`
 - <sup>Superscript</sup>: `<sup>superscript</sup>`
 - <mark>Highlighting</mark>: `<mark>highlighted</mark>`
-- [Links](https://example.org/): `[links](https://example.org)`
-- Headings: `### Heading`, where `#` is a top-level heading,
-	`##` a subheading, `###` a sub-subheading, etc
-
-	Headings will have Typst labels automatically generated from their content –
-	the `heading-labels` option controls this.
-	If you want to to specify a label explicitly, see
-	[the section on labels](#references-labels-figures-and-citations).
 - Inline code blocks: `` `code here` ``
 - Out-of-line code blocks:
 	````
@@ -408,89 +430,198 @@ We support CommonMark with a couple extensions.
 	let x = 5;
 	```
 	````
-- Horizontal rules: `---`.
-	This corresponds to the Typst code `#rule()`,
-	which, if not overridden by the `scope` parameter,
-	defaults to `#line(length: 100%)`:
-
-	---
-- Unordered lists:
+- Blockquotes:
 	```md
-	- Foo
-	- bar
+	> Whereas recognition of the inherent dignity and of
+	> the equal and inalienable rights of all members of
+	> the human family is the foundation of freedom,
+	> justice and peace in the world,
 	```
 
-	You can also use `+` and `*`.
-- Ordered lists:
-	```md
-	1. Foo
-	1. Bar
-	```
-- Math equations: `$x + y$` or `$$x + y$$`.
-	Requires the `math` parameter to be set.
-- Blockquotes: `> quote here`.
-- Images: `![alt text here](path/to/image.png)`
+### Links
 
-	Alt text is used by screen readers and other assistive technologies,
-	and won’t be visible in the document by default.
+You can link to a URL directly: `[link](https://example.org)`
 
-	You can also use the HTML `<img>` tag, which allows you to specify the width and height of the
-	image, either as a `%` or as an absolute value.
-	The below image will span 50% of the page and be 20pt tall:
+Or you can reuse URLs by defining them out-of-line:
 
-	```md
-	<img src="path/to/image.png" alt="alt text here" width="50%" height="20">
-	```
-- Tables:
-	```md
-	| Column 1 | Column 2 |
-	| -------- | -------- |
-	| Row 1 Cell 1 | Row 1 Cell 2 |
-	| Row 2 Cell 1 | Row 2 Cell 2 |
-	```
+```md
+[This link] and [that link][This link] go to the same place.
 
-	| Column 1 | Column 2 |
-	| -------- | -------- |
-	| Row 1 Cell 1 | Row 1 Cell 2 |
-	| Row 2 Cell 1 | Row 2 Cell 2 |
+[This link]: https://example.org
+```
 
-	You can also use HTML tables,
-	which has greater flexibility for elements inside tables:
+See [the section on labels](#references-labels-figures-and-citations)
+for using links with Typst labels and citations.
 
-	```md
-	<table>
-		<thead><tr><th>Column 1</th><th>Column 2</th></tr></thead>
-		<tr><td>Row 1 Cell 1</td><td>Row 1 Cell 2</td></tr>
-		<tr><td>Row 2 Cell 1</td><td>Row 2 Cell 2</td></tr>
-	</table>
-	```
-- Footnotes:
-	```md
-	Some text[^footnote]
-	[^footnote]: content
-	```
-- Term/description lists:
-	```md
-	<dl>
-		<dt>Ligature</dt>
-		<dd>A merged glyph.</dd>
-		<dt>Kerning</dt>
-		<dd>A spacing adjustment between two adjacent letters.</dd>
-	</dl>
-	```
-- Figures:
-	```md
-	<figure><figcaption>My lovely figure</figcaption>
+### Images
 
-	![a graph](graph.png)
-	</figure>
-	```
-- Inline SVG:
-	```md
-	<svg version="1.1" width="100" height="100" xmlns="http://www.w3.org/2000/svg">
-		<circle cx="50" cy="50" r="50" fill="blue" />
-	</svg>
-	```
+```md
+![alt text here](path/to/image.png)
+```
+
+Be aware that this will not work by default –
+see [Resolving paths correctly](#resolving-paths-correctly) for how to fix this.
+
+You can also use the HTML `<img>` tag, which allows you to specify the width and height of the
+image, either as a `%` or as an absolute value.
+The below image will span 50% of the page and be 20pt tall:
+
+```md
+<img src="path/to/image.png" alt="alt text here" width="50%" height="20">
+```
+
+Be aware that image paths that contain spaces must be wrapped in `<>`:
+
+```md
+<!-- Incorrect: Will render as text -->
+![alt text](image path.png)
+
+<!-- Correct: Will give an image -->
+![alt text](<image path.png>)
+```
+
+Alt text is used by screen readers and other assistive technologies,
+and won’t be visible in the document by default.
+It should provide a description of the image
+that makes the document readable to anyone who can’t see the image.
+
+If you want to add a caption to the image,
+you should set a `<figcaption>` explicitly.
+For example:
+
+```md
+<figure>
+
+![alt text](image.png)
+<figcaption>caption text</figcaption>
+</figure>
+```
+
+You can alternatively transform all alt text into captions automatically:
+
+```typst
+#cmarker.render(
+  read("example.md"),
+  scope: (
+    image: (source, alt: none, ..args) => {
+      figure(image(source, alt: alt, ..args), caption: alt)
+    },
+  ),
+)
+```
+
+However, this has disadvantage that
+you can’t use markup in the caption,
+because alt text is just a plain string and not content.
+(In theory, Markdown supports markup in image alt text,
+but our Markdown parser stringifies it anyway
+because Typst only supports strings in alt text.
+It’s possible we could add extra functionality for this use case.)
+
+### Headings
+
+Headings are denoted with hashes at the start of the line:
+
+```md
+# Title of the document
+## Sub-heading
+### Sub-sub-heading
+```
+
+The [h1-level](#h1-level) option controls how Markdown heading levels become Typst heading levels.
+
+Headings will have Typst labels automatically generated from their content –
+the `heading-labels` option controls this.
+If you want to to specify a label explicitly, see
+[the section on labels](#references-labels-figures-and-citations).
+
+### Horizontal rules
+
+Add a horizontal rule with `---`.
+This corresponds to the Typst code `#rule()`,
+which, if not overridden by the `scope` parameter,
+defaults to `#line(length: 100%)`:
+
+---
+
+### Lists
+
+Unordered (bullet-point) lists are denoted with `-`, `+` or `*`:
+```md
+- Foo
+- Bar
+```
+
+Ordered (numbered) lists are denoted with `1.` or `1)`:
+```md
+1. Foo
+1. Bar
+```
+
+The numbers will be generated automatically.
+
+### Math equations
+
+Math formulae are denoted with dollars: `$x + y$` or `$$x + y$$`.
+This requires the [`math`](#math) parameter to be set,
+and the syntax of the equations is determined by that parameter.
+
+### Tables
+
+```md
+| Column 1 | Column 2 |
+| -------- | -------- |
+| Row 1 Cell 1 | Row 1 Cell 2 |
+| Row 2 Cell 1 | Row 2 Cell 2 |
+```
+
+You can also use HTML tables,
+which has greater flexibility for elements inside tables:
+
+```md
+<table>
+	<thead><tr><th>Column 1</th><th>Column 2</th></tr></thead>
+	<tr><td>Row 1 Cell 1</td><td>Row 1 Cell 2</td></tr>
+	<tr><td>Row 2 Cell 1</td><td>Row 2 Cell 2</td></tr>
+</table>
+```
+
+### Footnotes
+
+```md
+Some text[^footnote]
+
+[^footnote]: content
+```
+
+### Term/description lists
+
+Term/description lists:
+```md
+<dl>
+	<dt>Ligature</dt>
+	<dd>A merged glyph.</dd>
+	<dt>Kerning</dt>
+	<dd>A spacing adjustment between two adjacent letters.</dd>
+</dl>
+```
+
+### Figures
+
+```md
+<figure><figcaption>My lovely figure</figcaption>
+
+![a graph](graph.png)
+</figure>
+```
+
+### Inline SVG
+
+```md
+<svg version="1.1" width="100" height="100" xmlns="http://www.w3.org/2000/svg">
+	<circle cx="50" cy="50" r="50" fill="blue" />
+</svg>
+```
 
 ## Interleaving Markdown and Typst
 
@@ -533,7 +664,7 @@ Conversely, one can put Typst code inside
 a HTML comment of the form
 `<!--raw-typst […]-->`
 to have it evaluated directly as Typst code
-(but only if the `raw-typst` option to `render` is set to `true` –
+(but only if [the `raw-typst` option](#raw-typst) is set to `true` –
 which it is by default –
 otherwise it will just be seen as a regular comment and removed):
 
@@ -541,18 +672,7 @@ otherwise it will just be seen as a regular comment and removed):
 <!--raw-typst Hello from #text(fill:blue)[Typst]!-->
 ```
 
-## Limitations
-
-Although I tried my best to escape everything correctly,
-I won’t provide a hard guarantee that everything is fully sandboxed
-even if you set `raw-typst: false`.
-That said, Typst itself is well-sandboxed anyway.
-
 ## FAQ
-
-### Typst is saying it can’t find my image – it’s looking inside `cmarker` for some reason!
-
-See [Resolving Paths Correctly](#resolving-paths-correctly).
 
 ### How do I include multiple Markdown files in one project?
 
@@ -564,60 +684,13 @@ If you instead wish to use
 `cmarker.render(read("file-a.md"))` followed by `cmarker.render(read("file-b.md"))`,
 you may encounter collision issues if two headings have the same name.
 This can be resolved in two ways:
-+ Giving the headings an explicit ID:
+- Giving the headings an explicit ID:
 	`<h1 id="my-id">My Heading</h1>` instead of `# My Heading`.
-+ Setting a label prefix, e.g. `label-prefix: "my-file-"`.
-
-### My image file contains spaces, but it gets rendered as text!
-
-This is a Markdown quirk – `![alt](image path.png)` is seen as plain text
-instead of an image.
-To fix it, use `![alt](<image path.png>)`.
-
-### My image caption is not being displayed!
-
-In the Markdown image syntax, the `text` in
-`![text](image.png)` is used to specify the image’s alt text,
-_not_ its caption.
-This means that `text` won’t be visible when viewing the PDF normally,
-and only appears inside a screen reader.
-If you want to set a caption for the image,
-you have to use `<figcaption>` explicitly.
-For example:
-
-```md
-<figure>
-
-![alt text](image.png)
-<figcaption>caption text</figcaption>
-</figure>
-```
-
-You can alternatively transform all alt text into captions automatically:
-
-```typst
-#cmarker.render(
-  read("example.md"),
-  scope: (
-    image: (source, alt: none, ..args) => {
-      figure(image(source, alt: alt, ..args), caption: alt)
-    },
-  ),
-)
-```
-
-However, this has disadvantage that
-you can’t use markup in the caption,
-because alt text is just a plain string and not content.
-(In theory, Markdown supports markup in image alt text,
-but our Markdown parser stringifies it anyway
-because Typst only supports strings in alt text.
-It’s possible we could add extra functionality for this use case.)
-
+- Setting a [label prefix](#label-prefix), e.g. `label-prefix: "my-file-"`.
 
 ### My Markdown after an open HTML tag is getting rendered as text!
 
-Another Markdown quirk –
+This is a Markdown quirk –
 in code like `<p>hello _world_</p>`
 or `<!-- -->hello _world_`,
 italics will not be generated.
@@ -662,10 +735,43 @@ And having them span the page width:
 
 ## Development
 
-- Build the plugin with `./build.sh`,
-	which produces the `plugin.wasm` necessary to use this.
-- Compile examples with `typst compile examples/{name}.typ`.
-- Compile this README to PDF with `typst compile README.typ`.
-- Run tests with `cargo test --workspace`.
-	Consult `test-runner/main.rs` for a guide on writing tests.
-- Fuzz the library with `cargo +nightly fuzz run fuzz`.
+File structure is as follows:
+
+<table>
+<tr><td><code>lib.typ</code></td><td>
+	The entrypoint of the library,
+	defining its public API.
+	This file only handles the Typst parts;
+	the computation itself is done by the Rust plugin at <code>plugin/</code>.
+</td></tr>
+<tr><td><code>plugin/</code></td><td>
+	The Rust plugin that is compiled to WebAssembly.
+	This is mostly serialization/deserialization scaffolding
+	around the real logic, which lives in <code>lib/</code>.
+</td></tr>
+<tr><td><code>lib/</code></td><td>
+	The <code>cmarker-typst</code> pure Rust library,
+	which does the grunt work of the translation itself.
+</td></tr>
+<tr><td><code>tests/</code></td><td>
+	The test suite.
+	Each Markdown or Typst file here
+	is rendered and compared with the expected HTML output.
+	Run all the tests with <code>cargo test --workspace</code>.
+</td></tr>
+<tr><td><code>test-runner/</code></td><td>
+	A helper crate that runs our test suite.
+	Consult <code>test-runner/main.rs</code> for a guide on writing tests.
+</td></tr>
+<tr><td><code>fuzz/</code></td><td>
+	Fuzzing for the library.
+	Run fuzzing with <code>cargo +nightly fuzz run fuzz</code>.
+</td></tr>
+<tr><td><code>examples/</code></td><td>
+	A few examples.
+	Compile them with <code>typst compile examples/{name}.typ</code>.
+</td></tr>
+<tr><td><code>prepare-release.sh</code></td><td>
+	A small shell script that can be used to cut a release of <code>cmarker.typ</code>.
+</td></tr>
+</table>
