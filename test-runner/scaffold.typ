@@ -2,32 +2,13 @@
 
 #set heading(numbering: "1.")
 
-#show raw: it => {
-  let attrs = (:)
-  if it.lang != none {
-    attrs.class = "language-" + it.lang
-  }
-  if it.block {
-    html.elem("pre", attrs: attrs, it.text)
-  } else {
-    html.elem("code", attrs: attrs, it.text)
-  }
-}
-#show super: it => html.elem("sup", it.body)
-#show sub: it => html.elem("sub", it.body)
-#show strike: it => html.elem("s", it.body)
-#show highlight: it => html.elem("mark", it.body)
+// Typst does not currently emit alignments for tables, so we insert an inert `<div>` that has the
+// alignments.
 #show table: it => {
-  if type(it.align) != array {
-    return it
+  if type(it.align) == array {
+    html.elem("div", attrs: (data-alignments: { it.align.map(a => [#a].text).join(",") }))
   }
-  html.elem("div", attrs: (data-alignments: { it.align.map(a => [#a].text).join(",") }), it)
-}
-#show link: it => {
-  if type(it.dest) != label {
-    return it
-  }
-  html.elem("span", attrs: (data-dest: str(it.dest)), it)
+  it
 }
 
 #{
