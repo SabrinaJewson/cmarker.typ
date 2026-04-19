@@ -301,7 +301,7 @@ render-with-metadata(
 
 The `render-with-metadata` functions works the same as `render` with two exceptions:
 1. This function returns `(meta, body)`. This allows the user to freely manipulate the metadata.
-	```typc
+	```typ
 	#let (meta, body) = render-with-metadata(input)
 	// `body` will be the same as:
 	#let body = render(input)
