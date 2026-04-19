@@ -242,6 +242,7 @@ The label prefix (given in `label-prefix`) will **not** be transformed.
 		Unlike the real Jupyter, we also number duplicate headings,
 		but this shouldn’t have any difference in practice since
 		Jupyter doesn’t allow referring to duplicate headings anyway.
+	- `none`: Don’t add automatic labels to headings.
 - Default value: `"github"`.
 
 #### `scope`

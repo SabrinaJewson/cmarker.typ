@@ -37,6 +37,7 @@ pub enum HtmlTagKind {
 
 #[derive(Clone, Copy)]
 pub enum HeadingLabels {
+    None,
     GitHub,
     Jupyter,
 }
@@ -44,8 +45,9 @@ pub enum HeadingLabels {
 impl HeadingLabels {
     pub fn from_u8(byte: u8) -> Option<Self> {
         Some(match byte {
-            0 => Self::GitHub,
-            1 => Self::Jupyter,
+            0 => Self::None,
+            1 => Self::GitHub,
+            2 => Self::Jupyter,
             _ => return None,
         })
     }
@@ -1162,6 +1164,7 @@ struct Label(String);
 impl Label {
     fn push(&mut self, s: &str, mode: HeadingLabels) {
         match mode {
+            HeadingLabels::None => {}
             HeadingLabels::GitHub => {
                 for c in s.chars() {
                     if github_slug_disallow::SET.contains_char(c) {

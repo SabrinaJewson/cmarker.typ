@@ -244,8 +244,9 @@
   }
 
   let heading-labels = {
-    if heading-labels == "github" { 0 }
-    else if heading-labels == "jupyter" { 1 }
+    if heading-labels == none { 0 }
+    else if heading-labels == "github" { 1 }
+    else if heading-labels == "jupyter" { 2 }
     else { assert(false, message: "invalid heading-labels") }
   }
 
