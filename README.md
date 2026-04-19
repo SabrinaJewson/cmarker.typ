@@ -42,7 +42,6 @@ formats.
 ## Contents
 
 2. [API](#api)
-2. [Resolving paths correctly](#resolving-paths-correctly)
 2. [References, labels, figures and citations](#references-labels-figures-and-citations)
 2. [Supported Markdown syntax](#supported-markdown-syntax)
 2. [Interleaving Markdown and Typst](#interleaving-markdown-and-typst)
@@ -321,31 +320,13 @@ The behaviour is the same as using `render`.
 	- `none`.
 - Default value: `none`.
 
-## Resolving paths correctly
-
-Because of how Typst handles paths,
-elements like images will by default resolve
-relative to the project root of `cmarker` itself
-and not your project.
-
-To fix this,
-one can override the `image` function in the scope the Typst code is evaluated.
-
-```typst
-#import "@preview/cmarker:0.1.8"
-
-#cmarker.render(
-  read("yourfile.md"),
-  scope: (image: (source, ..args) => image(source, ..args))
-)
-```
-
 ## References, labels, figures and citations
 
 `cmarker.typ` integrates well with Typst’s native references and labels.
 Where in Typst you would write `@foo`, in Markdown you write `[@foo]`;
 where in Typst you would write `@foo[Chapter]`, in Markdown you’d write `[Chapter][@foo]`.
 You can also write `[some text](#foo)` to have “some text” be a link that points at `foo`.
+
 Headings are automatically given references according to their name,
 but lowercased and with spaces replaced by hyphens
 (although this can be controlled with the [`heading-labels`](#heading-labels) option):
@@ -459,16 +440,25 @@ for using links with Typst labels and citations.
 ![alt text here](path/to/image.png)
 ```
 
-Be aware that this will not work by default –
-see [Resolving paths correctly](#resolving-paths-correctly) for how to fix this.
+Due to the way Typst resolves paths,
+in order for this to work you will need to override the `image` function in the [`scope`](#scope):
 
-You can also use the HTML `<img>` tag, which allows you to specify the width and height of the
+```typst
+#cmarker.render(
+  read("yourfile.md"),
+  scope: (image: (source, ..args) => image(source, ..args))
+)
+```
+
+You can use the HTML `<img>` tag, which allows you to specify the width and height of the
 image, either as a `%` or as an absolute value.
 The below image will span 50% of the page and be 20pt tall:
 
 ```md
 <img src="path/to/image.png" alt="alt text here" width="50%" height="20">
 ```
+
+#### Spaces in image paths
 
 Be aware that image paths that contain spaces must be wrapped in `<>`:
 
@@ -480,12 +470,35 @@ Be aware that image paths that contain spaces must be wrapped in `<>`:
 ![alt text](<image path.png>)
 ```
 
-Alt text is used by screen readers and other assistive technologies,
+#### External images
+
+Since Typst compilation has no network access,
+you won’t be able to include images from external URLs.
+For example, the below will fail:
+
+```md
+<!-- Bad -->
+![the Typst logo](https://upload.wikimedia.org/wikipedia/commons/f/f8/Typst.svg)
+```
+
+You instead need to download the image
+and reference the local path.
+
+```md
+<!-- Good -->
+![the Typst logo](Typst.svg)
+```
+
+#### Alt text and captions
+
+Alt text – which is specified between the `[]` –
+is used by screen readers and other assistive technologies,
 and won’t be visible in the document by default.
 It should provide a description of the image
 that makes the document readable to anyone who can’t see the image.
 
-If you want to add a caption to the image,
+If you want to add a caption to the image
+that will be visible to all readers,
 you should set a `<figcaption>` explicitly.
 For example:
 
