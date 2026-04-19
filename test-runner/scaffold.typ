@@ -17,7 +17,7 @@
     math: (text, block: true) => raw(block: block, text, lang: "math"),
     scope: (
       image: (path, ..args) => image(path, ..args),
-      rule: () => html.elem("hr"),
+      rule: html.hr,
     ),
   )
   run-cmarker(read(sys.inputs.md), ..args)
