@@ -41,7 +41,7 @@ formats.
 
 ## API
 
-We offer a two functions:
+We offer two functions:
 1. [render](#render)
 2. [render-with-metadata](#render-with-metadata)
 
@@ -381,17 +381,25 @@ We support CommonMark with a couple extensions.
 - Paragraph breaks: Two newlines, i.e. one blank line.
 - Hard line breaks (used more in poetry than prose):
 	Put two spaces at the end of the line.
-- `*emphasis*` or `_emphasis_`: *emphasis*
-- `**strong**` or `__strong__`: **strong**
-- `~strikethrough~`: ~strikethrough~
-- `[links](https://example.org)`: [links](https://example.org/)
-- `### Headings`, where `#` is a top-level heading,
+- *Emphasis*: `*emphasis*` or `_emphasis_`
+- **Strong**: `**strong**` or `__strong__`
+- ~Strikethrough~: `~strikethrough~`
+- <sub>Subscript</sub>: `<sub>subscript</sub>`
+- <sup>Superscript</sup>: `<sup>superscript</sup>`
+- <mark>Highlighting</mark>: `<mark>highlighted</mark>`
+- [Links](https://example.org/): `[links](https://example.org)`
+- Headings: `### Heading`, where `#` is a top-level heading,
 	`##` a subheading, `###` a sub-subheading, etc
-- `` `inline code blocks` ``: `inline code blocks`
--
+
+	Headings will have Typst labels automatically generated from their content –
+	the `heading-labels` option controls this.
+	If you want to to specify a label explicitly, see
+	[the section on labels](#references-labels-figures-and-citations).
+- Inline code blocks: `` `code here` ``
+- Out-of-line code blocks:
 	````
 	```
-	out of line code blocks
+	code here
 	```
 	````
 	Syntax highlighting can be achieved by specifying a language after the opening backticks:
@@ -400,44 +408,39 @@ We support CommonMark with a couple extensions.
 	let x = 5;
 	```
 	````
-	giving:
-	```rust
-	let x = 5;
-	```
-- `---`, making a horizontal rule.
+- Horizontal rules: `---`.
 	This corresponds to the Typst code `#rule()`,
 	which, if not overridden by the `scope` parameter,
 	defaults to `#line(length: 100%)`:
 
 	---
--
+- Unordered lists:
 	```md
-	- Unordered
-	- lists
+	- Foo
+	- bar
 	```
-	- Unordered
-	- Lists
--
+
+	You can also use `+` and `*`.
+- Ordered lists:
 	```md
-	1. Ordered
-	1. Lists
+	1. Foo
+	1. Bar
 	```
-	1. Ordered
-	1. Lists
-- `$x + y$` or `$$x + y$$`: math equations, if the `math` parameter is set.
-- `> blockquotes`, if the `blockquote` parameter is set.
-- Images: `![Some tiled hexagons](examples/hexagons.png)`, giving
-	![Some tiled hexagons](examples/hexagons.png)
+- Math equations: `$x + y$` or `$$x + y$$`.
+	Requires the `math` parameter to be set.
+- Blockquotes: `> quote here`.
+- Images: `![alt text here](path/to/image.png)`
+
+	Alt text is used by screen readers and other assistive technologies,
+	and won’t be visible in the document by default.
 
 	You can also use the HTML `<img>` tag, which allows you to specify the width and height of the
 	image, either as a `%` or as an absolute value.
-	The below image will span 90% of the page and be 20pt tall:
+	The below image will span 50% of the page and be 20pt tall:
 
 	```md
-	<img src="examples/hexagons.png" width="90%" height="20">
+	<img src="path/to/image.png" alt="alt text here" width="50%" height="20">
 	```
-
-	<img src="examples/hexagons.png" width="90%" height="20">
 - Tables:
 	```md
 	| Column 1 | Column 2 |
@@ -446,16 +449,48 @@ We support CommonMark with a couple extensions.
 	| Row 2 Cell 1 | Row 2 Cell 2 |
 	```
 
-| Column 1 | Column 2 |
-| -------- | -------- |
-| Row 1 Cell 1 | Row 1 Cell 2 |
-| Row 2 Cell 1 | Row 2 Cell 2 |
+	| Column 1 | Column 2 |
+	| -------- | -------- |
+	| Row 1 Cell 1 | Row 1 Cell 2 |
+	| Row 2 Cell 1 | Row 2 Cell 2 |
+
+	You can also use HTML tables,
+	which has greater flexibility for elements inside tables:
+
+	```md
+	<table>
+		<thead><tr><th>Column 1</th><th>Column 2</th></tr></thead>
+		<tr><td>Row 1 Cell 1</td><td>Row 1 Cell 2</td></tr>
+		<tr><td>Row 2 Cell 1</td><td>Row 2 Cell 2</td></tr>
+	</table>
+	```
 - Footnotes:
 	```md
 	Some text[^footnote]
 	[^footnote]: content
 	```
-- HTML, e.g. `<sub>subscript</sub>` for <sub>subscript</sub>.
+- Term/description lists:
+	```md
+	<dl>
+		<dt>Ligature</dt>
+		<dd>A merged glyph.</dd>
+		<dt>Kerning</dt>
+		<dd>A spacing adjustment between two adjacent letters.</dd>
+	</dl>
+	```
+- Figures:
+	```md
+	<figure><figcaption>My lovely figure</figcaption>
+
+	![a graph](graph.png)
+	</figure>
+	```
+- Inline SVG:
+	```md
+	<svg version="1.1" width="100" height="100" xmlns="http://www.w3.org/2000/svg">
+		<circle cx="50" cy="50" r="50" fill="blue" />
+	</svg>
+	```
 
 ## Interleaving Markdown and Typst
 
@@ -498,7 +533,8 @@ Conversely, one can put Typst code inside
 a HTML comment of the form
 `<!--raw-typst […]-->`
 to have it evaluated directly as Typst code
-(but only if the `raw-typst` option to `render` is set to `true`,
+(but only if the `raw-typst` option to `render` is set to `true` –
+which it is by default –
 otherwise it will just be seen as a regular comment and removed):
 
 ```md
