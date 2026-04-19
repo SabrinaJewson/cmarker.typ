@@ -182,7 +182,31 @@
     s: (attrs, body) => scope.at("strike", default: strike)(body),
     code: ("raw-text", (attrs, body) => scope.at("raw", default: raw)(body)),
     br: ("void", (attrs) => scope.at("linebreak", default: linebreak)()),
-    img: ("void", (attrs) => scope.at("image", default: image)(attrs.src, alt: attrs.at("alt", default: none))),
+    img: ("void", (attrs) => {
+      let args = (:)
+
+      let parse-dim(dim) = {
+        if dim.ends-with("%") {
+          int(dim.slice(0, -1)) * 1%
+        } else {
+          // When exporting as PDF, the inherent size of the image is converted into `pt` for its
+          // default size. HTML uses `px` instead, meaning this gives wrong results:
+          // https://github.com/typst/typst/issues/8136
+          int(dim) * 1pt
+        }
+      }
+
+      let width = attrs.at("width", default: none)
+      if width != none {
+        args += (width: parse-dim(width))
+      }
+      let height = attrs.at("height", default: none)
+      if height != none {
+        args += (height: parse-dim(height))
+      }
+
+      scope.at("image", default: image)(attrs.src, alt: attrs.at("alt", default: none), ..args)
+    }),
     blockquote: (attrs, body) => scope.at("quote", default: quote)(block: true, body),
 
     svg: ("raw-text", (attrs, body) => {

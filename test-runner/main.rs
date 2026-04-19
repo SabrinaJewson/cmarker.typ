@@ -137,7 +137,7 @@ fn run_test(path: &Path, bless: bool) -> anyhow::Result<Result<(), String>> {
         return Ok(Err(msg));
     }
 
-    let html = String::from_utf8(output.stdout).context("stdout not utf-8")?;
+    let html = postprocess_html(output.stdout)?;
 
     if old.is_empty() || bless || old == html {
         if old != html {
@@ -174,7 +174,21 @@ fn run_test(path: &Path, bless: bool) -> anyhow::Result<Result<(), String>> {
     Ok(Err(msg))
 }
 
+fn postprocess_html(html: Vec<u8>) -> anyhow::Result<String> {
+    let html = String::from_utf8(html).context("HTML not UTF-8")?;
+
+    // In the absence of Typst bundle exprt, we manually replace long base64 data urls with their
+    // path.
+    let mut url = "data:image/png;base64,".to_owned();
+    base64::engine::general_purpose::STANDARD.encode_string(
+        fs::read("examples/hexagons.png").context("reading hexagons.png")?,
+        &mut url,
+    );
+    Ok(html.replace(&url, "examples/hexagons.png"))
+}
+
 use anyhow::Context;
+use base64::Engine;
 use owo_colors::OwoColorize as _;
 use rayon::iter::IntoParallelRefIterator as _;
 use rayon::iter::ParallelIterator as _;

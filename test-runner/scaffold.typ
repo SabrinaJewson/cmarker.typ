@@ -13,17 +13,6 @@
     html.elem("code", attrs: attrs, it.text)
   }
 }
-#show image: it => {
-  if type(it.source) == str {
-    let attrs = (src: it.source)
-    if it.alt != none {
-      attrs.alt = it.alt
-    }
-    html.elem("img", attrs: attrs)
-  } else {
-    it
-  }
-}
 #show super: it => html.elem("sup", it.body)
 #show sub: it => html.elem("sub", it.body)
 #show strike: it => html.elem("s", it.body)
@@ -46,7 +35,7 @@
     raw-typst: true,
     math: (text, block: true) => raw(block: block, text, lang: "math"),
     scope: (
-      image: (path, alt: none, format: auto) => image(path, alt: alt, format: format),
+      image: (path, ..args) => image(path, ..args),
       rule: () => html.elem("hr"),
     ),
   )

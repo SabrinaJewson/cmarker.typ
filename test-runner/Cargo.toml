@@ -12,6 +12,7 @@ harness = false
 
 [dependencies]
 anyhow = "1.0.97"
+base64 = "0.22.1"
 owo-colors = "4.2.0"
 prettydiff = { version = "0.8.0", default-features = false }
 rayon = "1.10.0"

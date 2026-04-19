@@ -314,7 +314,7 @@ one can override the `image` function in the scope the Typst code is evaluated.
 
 #cmarker.render(
   read("yourfile.md"),
-  scope: (image: (source, alt: none, format: auto) => image(source, alt: alt, format: format))
+  scope: (image: (source, ..args) => image(source, ..args))
 )
 ```
 
@@ -428,6 +428,16 @@ We support CommonMark with a couple extensions.
 - `> blockquotes`, if the `blockquote` parameter is set.
 - Images: `![Some tiled hexagons](examples/hexagons.png)`, giving
 	![Some tiled hexagons](examples/hexagons.png)
+
+	You can also use the HTML `<img>` tag, which allows you to specify the width and height of the
+	image, either as a `%` or as an absolute value.
+	The below image will span 90% of the page and be 20pt tall:
+
+	```md
+	<img src="examples/hexagons.png" width="90%" height="20">
+	```
+
+	<img src="examples/hexagons.png" width="90%" height="20">
 - Tables:
 	```md
 	| Column 1 | Column 2 |
@@ -553,8 +563,8 @@ You can alternatively transform all alt text into captions automatically:
 #cmarker.render(
   read("example.md"),
   scope: (
-    image: (source, alt: none, format: auto) => {
-      figure(image(source, alt: alt, format: format), caption: alt)
+    image: (source, alt: none, ..args) => {
+      figure(image(source, alt: alt, ..args), caption: alt)
     },
   ),
 )
