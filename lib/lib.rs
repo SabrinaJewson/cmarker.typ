@@ -59,6 +59,7 @@ bitflags! {
         const SMART_PUNCTUATION = 0b0000_0001;
         const RAW_TYPST = 0b0000_0010;
         const MATH = 0b0000_0100;
+        const SET_DOCUMENT_TITLE = 0b0000_1000;
     }
 }
 
@@ -120,7 +121,12 @@ pub fn run<H: HtmlTags>(markdown: &str, options: Options<'_, H>) -> Result<Vec<u
                 match heading_level {
                     ..=-1 => {}
                     0 => {
-                        result.extend_from_slice(b"#set document(title:");
+                        result.extend_from_slice(
+                            match options.flags.contains(Flags::SET_DOCUMENT_TITLE) {
+                                true => b"#set document(title:",
+                                false => b"#title",
+                            },
+                        );
                         start_scope(&mut open_tags, &mut result);
                     }
                     n @ 1.. => {
@@ -148,7 +154,12 @@ pub fn run<H: HtmlTags>(markdown: &str, options: Options<'_, H>) -> Result<Vec<u
                     ..=-1 => {}
                     0 => {
                         end_scope(&mut open_tags, &mut result);
-                        result.extend_from_slice(b");#title();");
+                        result.extend_from_slice(
+                            match options.flags.contains(Flags::SET_DOCUMENT_TITLE) {
+                                true => b");#title();",
+                                false => b";",
+                            },
+                        );
                     }
                     1.. => result.extend_from_slice(b"\n"),
                 }
@@ -1202,10 +1213,8 @@ mod tests {
     #[test]
     fn heading() {
         assert_eq!(with_h1_level("x\n# H", -1), "x\n\nH");
-        assert_eq!(
-            with_h1_level("# H", 0),
-            "#set document(title:[H]);#title();"
-        );
+        assert_eq!(with_h1_level("# H", 0), "#title[H];");
+        assert_eq!(with_set_title("# H"), "#set document(title:[H]);#title();");
         assert_eq!(with_h1_level("## H", 0), "\n= H\n#label(\"h\");");
         assert_eq!(with_h1_level("### H", 0), "\n== H\n#label(\"h\");");
         assert_eq!(with_h1_level("# H", 1), "\n= H\n#label(\"h\");");
@@ -1654,6 +1663,13 @@ mod tests {
     fn with_h1_level(s: &str, h1_level: i8) -> String {
         let mut options = default_options();
         options.h1_level = h1_level;
+        render_with(s, options)
+    }
+    #[track_caller]
+    fn with_set_title(s: &str) -> String {
+        let mut options = default_options();
+        options.h1_level = 0;
+        options.flags = Flags::SET_DOCUMENT_TITLE;
         render_with(s, options)
     }
     #[track_caller]

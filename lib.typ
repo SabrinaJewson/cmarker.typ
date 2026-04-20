@@ -4,6 +4,7 @@
   smart-punctuation: true,
   math: none,
   h1-level: 1,
+  set-document-title: true,
   raw-typst: true,
   html: (:),
   label-prefix: "",
@@ -242,6 +243,9 @@
     flags += 0b00000100
     scope += (inlinemath: math.with(block: false), displaymath: math.with(block: true))
   }
+  if set-document-title {
+    flags += 0b00001000
+  }
 
   let heading-labels = {
     if heading-labels == none { 0 }
@@ -345,6 +349,7 @@
   smart-punctuation: true,
   math: none,
   h1-level: 1,
+  set-document-title: true,
   raw-typst: true,
   html: (:),
   label-prefix: "",
@@ -359,6 +364,7 @@
     smart-punctuation: smart-punctuation,
     math: math,
     h1-level: h1-level,
+    set-document-title: set-document-title,
     raw-typst: raw-typst,
     html: html,
     label-prefix: label-prefix,

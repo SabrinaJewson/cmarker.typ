@@ -61,6 +61,7 @@ render(
   smart-punctuation: true,
   math: none,
   h1-level: 1,
+  set-document-title: true,
   raw-typst: true,
   html: (:),
   label-prefix: "",
@@ -134,6 +135,21 @@ when set to `2`,
 et cetera.
 - Accepted values: Integers in the range [-128, 127].
 - Default value: 1.
+
+#### `set-document-title`
+
+Whether to emit a `#set document(title: […])` line
+for `#title()`s.
+
+If you encounter a “document set rules are not allowed inside of containers” error,
+you should set this to `false`,
+and potentially add a `#set document(title: […])` line manually.
+
+This has effect when [`h1-level`](#h1-level) is zero
+and you have a top-level (i.e. `#`) heading.
+
+- Accepted values: Booleans.
+- Default value: `true`.
 
 #### `raw-typst`
 
@@ -287,6 +303,7 @@ render-with-metadata(
   smart-punctuation: true,
   math: none,
   h1-level: 1,
+  set-document-title: true,
   raw-typst: true,
   html: (:),
   label-prefix: "",
