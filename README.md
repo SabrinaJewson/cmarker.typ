@@ -745,6 +745,36 @@ or insert two newlines after the opening tag:
 hello _world_</p>
 ```
 
+### How to I save the resulting Typst file?
+
+`cmarker.typ` is not intended for one-time conversions from Markdown to Typst;
+it is intended for when you want to keep the Markdown file
+and continue to edit it,
+but have it be rendered with Typst.
+For one-time conversions,
+I’d recommend using [Pandoc](https://pandoc.org/) instead.
+
+If you still want to use it for this purpose,
+you can pass in [`show-source: true`](#show-source)
+and render to HTML using
+`typst compile --features html --format html your-file.typ`.
+Then, open `your-file.html` in a web browser and copy the code block.
+
+Alternatively, you can attach it to the PDF as follows:
+
+```typ
+#let typst-code = cmarker.render(read("yourmarkdown.md"), show-source: true)
+#pdf.attach("yourtypstcode.typ", bytes(typst-code.text))
+```
+
+And then extract the attachment from the generated PDF
+using your preferred PDF viewer.
+
+Since `cmarker.typ` does not attempt to make generated code readable,
+you may want to use
+a code formatter like [typstyle](https://github.com/typstyle-rs/typstyle)
+on the result.
+
 ### How do I centre tables? How do I have them span the page width?
 
 This can be achieved via [show rules](https://typst.app/docs/reference/styling/#show-rules).
