@@ -743,8 +743,9 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "wasm-minimal-protocol"
-version = "0.1.0"
-source = "git+https://github.com/SabrinaJewson/wasm-minimal-protocol.rs?rev=992f87bfb3f912742ea85d8efd29db2452c09202#992f87bfb3f912742ea85d8efd29db2452c09202"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ae17f1dd65ee737caf73ea45f517c09578ab60970c28e5e96b7900fe2e245633"
 dependencies = [
  "proc-macro2",
  "quote",

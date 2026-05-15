@@ -7,6 +7,7 @@ strip = true
 opt-level = "z"
 codegen-units = 1
 
+# https://github.com/rust-phf/rust-phf/pull/321
 [patch.crates-io]
 phf_codegen   = { git = "https://github.com/conradludgate/rust-phf", rev = "b6bba7216937ad4808c1a7097017aa88551a4463" }
 phf_generator = { git = "https://github.com/conradludgate/rust-phf", rev = "b6bba7216937ad4808c1a7097017aa88551a4463" }

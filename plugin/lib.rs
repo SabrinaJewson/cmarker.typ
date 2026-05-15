@@ -54,6 +54,7 @@ fn render(markdown: &[u8], options: &[u8]) -> Result<Vec<u8>, String> {
     cmarker_typst::run(markdown, options)
 }
 
+use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::string::ToString;
 use alloc::vec;

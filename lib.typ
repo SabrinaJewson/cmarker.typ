@@ -256,6 +256,7 @@
 
   assert(type(h1-level) == int, message: "h1-level must be an integer")
   assert(-128 <= h1-level and h1-level <= 127, message: "h1-level must be in the range [-128, 127]")
+  // Reinterpret 8-bit 2’s complement (i8) as a u8
   h1-level = if h1-level < 0 { 256 + h1-level } else { h1-level }
 
   let options-bytes = (flags, h1-level, heading-labels)
