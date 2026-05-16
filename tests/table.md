@@ -31,3 +31,7 @@ HTML table:
 		<tr><td colspan="2">Footer R2C1 (colspan = 2)</td></tr>
 	</tfoot>
 </table>
+
+Empty table:
+
+<table></table>

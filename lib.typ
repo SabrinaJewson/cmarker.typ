@@ -133,6 +133,9 @@
           rows.body.push(untag-children(child, "<td>"))
         }
       }
+      if rows.header.len() == 0 and rows.body.len() == 0 and rows.footer.len() == 0 {
+        return table()
+      }
       // FIXME: This is likely buggy for exotic uses of rowspan and colspan.
       let columns = calc.max(
         ..rows.header.map(r => r.len()),
