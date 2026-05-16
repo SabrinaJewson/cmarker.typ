@@ -2,6 +2,9 @@
 members = ["lib", "plugin", "test-runner", "fuzz"]
 resolver = "3"
 
+[workspace.dependencies]
+typst-syntax = "0.14.0"
+
 [profile.release.package.plugin]
 strip = true
 opt-level = "z"

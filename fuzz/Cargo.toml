@@ -8,9 +8,9 @@ edition = "2024"
 cargo-fuzz = true
 
 [dependencies]
-libfuzzer-sys = "0.4.9"
-typst-syntax = "0.13.1"
 cmarker-typst = { path = "../lib" }
+libfuzzer-sys = "0.4.9"
+typst-syntax.workspace = true
 
 [[bin]]
 name = "fuzz"

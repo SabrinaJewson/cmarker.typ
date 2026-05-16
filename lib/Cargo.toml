@@ -22,7 +22,7 @@ phf = { version = "0.11.3", default-features = false }
 ucd-trie = { version = "0.1.7", default-features = false }
 
 [dev-dependencies]
-typst-syntax = "0.13.1"
+typst-syntax.workspace = true
 
 [build-dependencies]
 icu_properties = { version = "2.0.1", features = ["compiled_data"] }

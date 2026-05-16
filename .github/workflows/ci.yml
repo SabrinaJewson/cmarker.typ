@@ -1,48 +1,62 @@
-{
-    "on": ["push", "pull_request"],
-    "name": "CI",
-    "jobs": {
-        "clippy": {
-            "runs-on": "ubuntu-latest",
-            "steps": [
-                { "uses": "actions/checkout@v4" },
-                { "uses": "dtolnay/rust-toolchain@stable", "with": { "components": "clippy" } },
-                { "run": "cargo clippy --workspace --all-targets -- -Dwarnings" },
-            ],
-        },
-        "test": {
-            "runs-on": "ubuntu-latest",
-            "steps": [
-                { "uses": "actions/checkout@v4" },
-                { "uses": "dtolnay/rust-toolchain@stable", "with": { "targets": "wasm32v1-none" } },
-                { "uses": "typst-community/setup-typst@v4", "with": { "typst-version": "0.14.0" } },
-                { "run": "cargo test --workspace" },
-            ],
-        },
-        "fmt": {
-            "runs-on": "ubuntu-latest",
-            "steps": [
-                { "uses": "actions/checkout@v4" },
-                { "uses": "dtolnay/rust-toolchain@stable", "with": { "components": "rustfmt" } },
-                { "run": "cargo fmt --all -- --check" },
-            ],
-        },
-        "fuzz": {
-            "runs-on": "ubuntu-latest",
-            "steps": [
-                { "uses": "actions/checkout@v4" },
-                { "uses": "dtolnay/rust-toolchain@nightly" },
-                {
-                    "uses": "robinraju/release-downloader@v1",
-                    "with": {
-                        "repository": "rust-fuzz/cargo-fuzz",
-                        "tag": "0.13.1",
-                        "fileName": "cargo-fuzz-0.13.1-x86_64-unknown-linux-musl.tar.gz",
-                        "extract": true,
-                    },
-                },
-                { "run": "./cargo-fuzz run fuzz --target=x86_64-unknown-linux-gnu -- -max_total_time=10" },
-            ],
-        },
-    },
-}
+on: [push, pull_request]
+name: CI
+jobs:
+  typst-version-consistency:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          typst=$(sed -n 's/^compiler = "\(.*\)"$/\1/p' typst.toml)
+          cargo=$(sed -n 's/^typst-syntax = "\(.*\)"$/\1/p' Cargo.toml)
+          ci=$(sed -n 's/^ *typst-version: "\(.*\)"$/\1/p' .github/workflows/ci.yml)
+          if [ "$typst" != "$cargo" ] || [ "$cargo" != "$ci" ]; then
+            echo 'Typst versions out of sync:'
+            echo "  typst.toml:               $typst"
+            echo "  Cargo.toml:               $cargo"
+            echo "  .github/workflows/ci.yml: $ci"
+            exit 1
+          fi
+          echo "All Typst versions consistent at $typst"
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - run: cargo clippy --workspace --all-targets -- -Dwarnings
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32v1-none
+      - uses: typst-community/setup-typst@v4
+        with:
+          typst-version: "0.14.0"
+      - run: cargo test --workspace
+
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all -- --check
+
+  fuzz:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: robinraju/release-downloader@v1
+        with:
+          repository: rust-fuzz/cargo-fuzz
+          tag: "0.13.1"
+          fileName: cargo-fuzz-0.13.1-x86_64-unknown-linux-musl.tar.gz
+          extract: true
+      - run: ./cargo-fuzz run fuzz --target=x86_64-unknown-linux-gnu -- -max_total_time=10
