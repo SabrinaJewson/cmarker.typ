@@ -328,6 +328,8 @@
   // [1] delimited by a line of three hyphens (---) at the top
   // [2] and a line of three hyphens (---) or three dots (...) at the bottom.
   // [3] The initial line --- must not be followed by a blank line.
+  //
+  // Reference: https://pandoc.org/demo/example33/8.10-metadata-blocks.html
   let extract-frontmatter(s) = {
     let original = s
 
@@ -341,7 +343,7 @@
       return ("", original)
     }
 
-    let end-match = s.match(regex("\n(---|\.\.\.)[ \t\r]*\n"))
+    let end-match = s.match(regex("\n(---|\.\.\.)[ \t\r]*(\n|$)"))
     if end-match == none {
       return ("", original)
     }

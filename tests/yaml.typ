@@ -45,11 +45,11 @@
 
 #test-template(md.join("\n"), expects-metadata: "title: 'metadata-test'")
 
+// simple metadata, `...` closing delimiter, whitespace, and no content after
 #let md = (
   "---\t \r",
   "title: 'metadata-test'",
   "... \r\t",
-  "content with simple metadata, `...` closing delimiter, and whitespace"
 )
 
 #test-template(md.join("\n"), expects-metadata: "title: 'metadata-test'")
