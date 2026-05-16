@@ -7,3 +7,7 @@
 #run-cmarker("<h6>raven</h6>", h1-level: -7)
 
 @x
+
+#box[
+  #run-cmarker("<h1>not title</h1>", h1-level: 0, set-document-title: false)
+]

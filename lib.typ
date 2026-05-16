@@ -79,8 +79,12 @@
     if level < 0 {
       body
     } else if level == 0 {
-      set document(title: body)
-      title()
+      if set-document-title {
+        set document(title: body)
+        title()
+      } else {
+        title(body)
+      }
     } else {
       labelify(scope.at("heading", default: heading)(level: level, body), attrs)
     }
