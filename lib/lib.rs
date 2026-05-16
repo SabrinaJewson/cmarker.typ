@@ -1086,6 +1086,7 @@ fn escape_string(text: &[u8], result: &mut Vec<u8>) {
 }
 
 fn escape_text(text: &[u8], result: &mut Vec<u8>) {
+    // TODO: It is possible this could be optimized by using `extend_from_slice` instead of `push`.
     for &byte in text {
         // For shorthands used in markup mode, see:
         // <https://github.com/typst/typst/blob/f51cb4b03e9712b8eb404f8184a17ee4a63aaab2/crates/typst-syntax/src/ast.rs#L592-L597>
@@ -1122,6 +1123,7 @@ fn escape_text(text: &[u8], result: &mut Vec<u8>) {
             // beginning and end of content blocks
             "[]",
         );
+        // TODO: It is possible this `memchr` check could be optimized
         if memchr(byte, to_escape.as_bytes()).is_some() {
             result.push(b'\\');
         }
