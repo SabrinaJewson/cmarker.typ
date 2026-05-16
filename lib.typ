@@ -188,7 +188,29 @@
     em: (attrs, body) => scope.at("emph", default: emph)(body),
     strong: (attrs, body) => scope.at("strong", default: strong)(body),
     s: (attrs, body) => scope.at("strike", default: strike)(body),
-    code: ("raw-text", (attrs, body) => scope.at("raw", default: raw)(body)),
+    // Although we stringify the body, <code> cannot be a raw text element because raw text elements
+    // - have their content ignored by heading ID generation and
+    // - include nested HTML in the string,
+    // both of which are undesirable for <code>.
+    code: (attrs, body) => {
+      // https://github.com/typst/typst/issues/2196#issuecomment-1728135476
+      let to-string(it) = {
+        if type(it) == str {
+          it
+        } else if type(it) != content {
+          str(it)
+        } else if it.has("text") {
+          it.text
+        } else if it.has("children") {
+          it.children.map(to-string).join()
+        } else if it.has("body") {
+          to-string(it.body)
+        } else if it == [ ] {
+          " "
+        }
+      }
+      scope.at("raw", default: raw)(to-string(body))
+    },
     br: ("void", (attrs) => scope.at("linebreak", default: linebreak)()),
     img: ("void", (attrs) => {
       let args = (:)
