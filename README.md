@@ -775,6 +775,32 @@ you may want to use
 a code formatter like [typstyle](https://github.com/typstyle-rs/typstyle)
 on the result.
 
+### How do I have headings start on a new page?
+
+[Show rules](https://typst.app/docs/reference/styling/#show-rules) are the best way:
+
+```typst
+#show heading.where(level: 1): it => {
+  pagebreak(weak: true)
+  it
+}
+#cmarker.render(read("main.md"))
+```
+
+For example, in the below document a pagebreak will occur before the second heading:
+
+```md
+# first heading
+some content
+
+## sub-heading
+
+<!-- a pagebreak will be inserted here -->
+
+# second heading
+more content
+```
+
 ### How do I centre tables? How do I have them span the page width?
 
 This can be achieved via [show rules](https://typst.app/docs/reference/styling/#show-rules).
