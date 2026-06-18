@@ -3,6 +3,7 @@
   markdown,
   smart-punctuation: true,
   math: none,
+  task-list-marker: none,
   h1-level: 1,
   set-document-title: true,
   raw-typst: true,
@@ -275,6 +276,11 @@
   if set-document-title {
     flags += 0b00001000
   }
+  if task-list-marker != none {
+    assert(type(task-list-marker) == function, message: "task-list-marker must be a function")
+    flags += 0b00010000
+    scope += (task-list-marker: task-list-marker)
+  }
 
   let heading-labels = {
     if heading-labels == none { 0 }
@@ -380,6 +386,7 @@
   markdown,
   smart-punctuation: true,
   math: none,
+  task-list-marker: none,
   h1-level: 1,
   set-document-title: true,
   raw-typst: true,
@@ -395,6 +402,7 @@
     markdown,
     smart-punctuation: smart-punctuation,
     math: math,
+    task-list-marker: task-list-marker,
     h1-level: h1-level,
     set-document-title: set-document-title,
     raw-typst: raw-typst,

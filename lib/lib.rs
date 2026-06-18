@@ -60,6 +60,8 @@ bitflags! {
         const RAW_TYPST = 0b0000_0010;
         const MATH = 0b0000_0100;
         const SET_DOCUMENT_TITLE = 0b0000_1000;
+        /// Assumes the existence of a `task-list-marker` item in scope.
+        const TASK_LISTS = 0b0001_0000;
     }
 }
 
@@ -73,6 +75,9 @@ pub fn run<H: HtmlTags>(markdown: &str, options: Options<'_, H>) -> Result<Vec<u
     }
     if options.flags.contains(Flags::MATH) {
         markdown_options |= pulldown_cmark::Options::ENABLE_MATH;
+    }
+    if options.flags.contains(Flags::TASK_LISTS) {
+        markdown_options |= pulldown_cmark::Options::ENABLE_TASKLISTS;
     }
 
     let mut result = Vec::new();
@@ -116,6 +121,8 @@ pub fn run<H: HtmlTags>(markdown: &str, options: Options<'_, H>) -> Result<Vec<u
     };
 
     let mut footnotes = Footnotes::default();
+
+    let mut open_lists = <Vec<OpenList>>::new();
 
     let mut farm = Farm::default();
 
@@ -232,17 +239,18 @@ pub fn run<H: HtmlTags>(markdown: &str, options: Options<'_, H>) -> Result<Vec<u
             }
             E::End(TagEnd::CodeBlock) => unreachable!(),
 
-            E::Start(Tag::List(first)) => {
-                if let Some(first) = first {
-                    result.extend_from_slice(b"#enum(start:");
-                    result.extend_from_slice(itoa::Buffer::new().format(first).as_bytes());
-                    result.extend_from_slice(b",");
-                } else {
-                    result.extend_from_slice(b"#list(");
-                }
+            E::Start(Tag::List(first)) => open_lists.push(OpenList::new(first, &mut result)),
+            E::End(TagEnd::List(_)) => open_lists.pop().unwrap().end(&mut result),
+            E::Start(Tag::Item) => {
+                open_lists.last_mut().unwrap().item(match parser.next() {
+                    (Some(E::TaskListMarker(checked)), _) => Some(checked),
+                    (event, unpeeker) => {
+                        unpeeker.unpeek(event);
+                        None
+                    }
+                });
+                start_scope(&mut open_tags, &mut result);
             }
-            E::End(TagEnd::List(_)) => result.extend_from_slice(b")\n"),
-            E::Start(Tag::Item) => start_scope(&mut open_tags, &mut result),
             E::End(TagEnd::Item) => {
                 end_scope(&mut open_tags, &mut result);
                 result.extend_from_slice(b",");
@@ -579,6 +587,116 @@ impl<'a> Footnotes<'a> {
             }
         }
         out.extend_from_slice(content);
+    }
+}
+
+/// State associated with each open list.
+struct OpenList {
+    /// For each item in the list, whether it’s normal or a task list item.
+    ///
+    /// Of the form `1,0,0,2,`, where:
+    /// - `0` is a normal list item
+    /// - `1` is an unchecked task list item
+    /// - `2` is a checked task list item
+    ///
+    /// Never has trailing `0,`s; the number of implicit trailing `0,`s is given below. This is to
+    /// avoid allocating in the common case.
+    items: String,
+    trailing_zeros: u32,
+    /// The index of the function call (`enum` or `list`).
+    ///
+    /// We won’t know ahead-of-time whether bullet-point lists are represented as `list`s or as
+    /// `enum`s (the latter is used when task list markers are present, as there is otherwise no
+    /// non-hacky way to have the bullet point vary from item to item).
+    ///
+    /// Therefore, we will sometimes write `list` initially and later override with `enum`.
+    ///
+    /// This isn’t an ideal solution for several reasons:
+    /// - Set and show rules for `enum`s will apply to these unordered task-lists
+    /// - Set and show rules for `list`s will not apply
+    /// - HTML output will incorrectly produce `<ol>` instead of `<ul>`
+    fn_call: usize,
+    /// The starting index of the list; `1` for unordered lists.
+    start: u64,
+}
+
+impl OpenList {
+    fn new(first: Option<u64>, result: &mut Vec<u8>) -> Self {
+        let fn_call = result.len() + 1;
+        if let Some(first) = first {
+            result.extend_from_slice(b"#enum(start:");
+            result.extend_from_slice(itoa::Buffer::new().format(first).as_bytes());
+            result.extend_from_slice(b",");
+        } else {
+            result.extend_from_slice(b"#list(");
+        }
+        Self {
+            items: String::new(),
+            trailing_zeros: 0,
+            fn_call,
+            start: first.unwrap_or(1),
+        }
+    }
+    fn pad(&mut self) {
+        for _ in 0..self.trailing_zeros {
+            self.items.push_str("0,");
+        }
+        self.trailing_zeros = 0;
+    }
+    fn item(&mut self, item: Option<bool>) {
+        match item {
+            Some(checked) => {
+                self.pad();
+                self.items.push_str(match checked {
+                    false => "1,",
+                    true => "2,",
+                });
+            }
+            None => self.trailing_zeros += 1,
+        }
+    }
+    fn end(mut self, result: &mut Vec<u8>) {
+        if !self.items.is_empty() {
+            self.pad();
+            let mut start = itoa::Buffer::new();
+            let start = start.format(self.start).as_bytes();
+            let is_numbered = result[self.fn_call] == b'e';
+
+            result.extend_from_slice(b"numbering:(..n,l)=>context{let v=(");
+            result.extend_from_slice(self.items.as_bytes());
+            result.extend_from_slice(b").at(");
+            if is_numbered {
+                result.extend_from_slice(b"if enum.reversed{");
+                result.extend_from_slice(start);
+                result.extend_from_slice(b" - l}else{l - ");
+                result.extend_from_slice(start);
+                result.extend_from_slice(b"}");
+            } else {
+                result.extend_from_slice(b"l - ");
+                result.extend_from_slice(start);
+            }
+            result.extend_from_slice(b");if v>0{task-list-marker(v>1)}else{");
+            if is_numbered {
+                result.extend_from_slice(b"numbering(enum.numbering,..n,l)}}");
+            } else {
+                result[self.fn_call..][..4].copy_from_slice(b"enum");
+                let s = concat!(
+                    "if type(list.marker)==content{",
+                    "list.marker",
+                    "}else if type(list.marker)==array{",
+                    "list.marker.at(calc.rem(n.pos().len(),list.marker.len()))",
+                    "}else{",
+                    "(list.marker)(n.pos().len())",
+                    "}",
+                    "}},",
+                    "full:true,",
+                    "reversed:false,",
+                    "start:1,",
+                );
+                result.extend_from_slice(s.as_bytes());
+            }
+        }
+        result.extend_from_slice(b")\n");
     }
 }
 

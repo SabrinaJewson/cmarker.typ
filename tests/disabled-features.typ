@@ -11,3 +11,7 @@
 #run-cmarker("<!--raw-typst .-->", raw-typst: false)
 
 #run-cmarker("<!--raw-typst .-->", raw-typst: true)
+
+#run-cmarker("- [ ] Foo\n- [x] bar")
+
+#run-cmarker("- [ ] Foo\n- [x] bar", task-list-marker: b => [#b])

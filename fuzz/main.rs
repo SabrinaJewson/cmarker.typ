@@ -24,7 +24,7 @@ fuzz_target!(|markdown: &str| {
         label_prefix: "",
         label_use_prefix: "",
         heading_labels: HeadingLabels::Jupyter,
-        flags: Flags::SMART_PUNCTUATION | Flags::MATH,
+        flags: Flags::SMART_PUNCTUATION | Flags::MATH | Flags::TASK_LISTS,
         h1_level: 1,
     };
     let text = cmarker_typst::run(markdown, options).unwrap();

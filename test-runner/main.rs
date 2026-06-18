@@ -60,10 +60,14 @@ fn run_test(path: &Path, bless: bool) -> anyhow::Result<Result<(), String>> {
         Some("typ") => Kind::Typst,
         _ => return Ok(Ok(())),
     };
-    let html_path = path.with_extension("html");
-    let old = match fs::exists(&html_path)? {
+    let format = match is_svg(path)? {
+        true => "svg",
+        false => "html",
+    };
+    let output_path = path.with_extension(format);
+    let old = match fs::exists(&output_path)? {
         false => String::new(),
-        true => fs::read_to_string(&html_path)?,
+        true => fs::read_to_string(&output_path)?,
     };
 
     let typst_command = || {
@@ -79,12 +83,14 @@ fn run_test(path: &Path, bless: bool) -> anyhow::Result<Result<(), String>> {
             }
         }
         command.arg("-");
-        command.arg("--format=html");
         command.arg("--features=html");
         command.arg("--root=.");
         command
     };
-    let output = typst_command().output().context("running typst")?;
+    let output = typst_command()
+        .args(["--format", format])
+        .output()
+        .context("running typst")?;
 
     let stderr = String::from_utf8(output.stderr).context("stderr not utf-8")?;
 
@@ -100,6 +106,7 @@ fn run_test(path: &Path, bless: bool) -> anyhow::Result<Result<(), String>> {
 
         let output = typst_command()
             .arg("--input=show-source=")
+            .arg("--format=html")
             .output()
             .context("running typst again")?;
         if !output.stdout.is_empty() {
@@ -137,18 +144,18 @@ fn run_test(path: &Path, bless: bool) -> anyhow::Result<Result<(), String>> {
         return Ok(Err(msg));
     }
 
-    let html = postprocess_html(output.stdout)?;
+    let output = postprocess_output(output.stdout)?;
 
-    if old.is_empty() || bless || old == html {
-        if old != html {
-            fs::write(&html_path, &html).context("writing HTML")?;
+    if old.is_empty() || bless || old == output {
+        if old != output {
+            fs::write(&output_path, &output).context("writing output")?;
             if old.is_empty() {
-                println!("{} {}", "Created".bold().blue(), html_path.display());
+                println!("{} {}", "Created".bold().blue(), output_path.display());
             } else {
-                println!("{} {}", "Updated".bold().blue(), html_path.display());
+                println!("{} {}", "Updated".bold().blue(), output_path.display());
             }
         } else if bless {
-            println!("{} {}", "Unchanged".bold().white(), html_path.display());
+            println!("{} {}", "Unchanged".bold().white(), output_path.display());
         } else {
             println!("{} {}", "Success".green().bold(), path.display());
         }
@@ -159,13 +166,13 @@ fn run_test(path: &Path, bless: bool) -> anyhow::Result<Result<(), String>> {
         context_size: 3,
         skipping_marker: &"~~~".white().to_string(),
     };
-    let diff = prettydiff::text::diff_lines(&old, &html).format_with_context(Some(config), true);
+    let diff = prettydiff::text::diff_lines(&old, &output).format_with_context(Some(config), true);
     let msg = format!(
         "\n{}\n{diff}\n{}Run with BLESS=1 to overwrite\n",
         format_args!(
             "{}{} differs from current output",
             "Error: ".red(),
-            html_path.display()
+            output_path.display()
         )
         .bold(),
         "Note: ".white(),
@@ -174,10 +181,27 @@ fn run_test(path: &Path, bless: bool) -> anyhow::Result<Result<(), String>> {
     Ok(Err(msg))
 }
 
-fn postprocess_html(html: Vec<u8>) -> anyhow::Result<String> {
-    let html = String::from_utf8(html).context("HTML not UTF-8")?;
+fn is_svg(path: &Path) -> anyhow::Result<bool> {
+    const MARKER: &[u8] = b"<!-- SVG -->\n";
+    let mut buf = [0; MARKER.len()];
+    (|| -> io::Result<bool> {
+        let mut file = File::open(path)?;
+        let mut i = 0;
+        while i < buf.len() {
+            match file.read(&mut buf[i..])? {
+                0 => break,
+                n => i += n,
+            }
+        }
+        Ok(&buf[..i] == MARKER)
+    })()
+    .with_context(|| format!("reading {}", path.display()))
+}
 
-    // In the absence of Typst bundle exprt, we manually replace long base64 data urls with their
+fn postprocess_output(output: Vec<u8>) -> anyhow::Result<String> {
+    let html = String::from_utf8(output).context("output not UTF-8")?;
+
+    // In the absence of Typst bundle export, we manually replace long base64 data urls with their
     // path.
     let mut url = "data:image/png;base64,".to_owned();
     base64::engine::general_purpose::STANDARD.encode_string(
@@ -196,5 +220,8 @@ use std::env;
 use std::ffi::OsStr;
 use std::fmt::Write as _;
 use std::fs;
+use std::fs::File;
+use std::io;
+use std::io::Read;
 use std::path::Path;
 use std::process;

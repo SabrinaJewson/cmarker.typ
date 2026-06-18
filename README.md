@@ -60,6 +60,7 @@ render(
   markdown,
   smart-punctuation: true,
   math: none,
+  task-list-marker: none,
   h1-level: 1,
   set-document-title: true,
   raw-typst: true,
@@ -120,6 +121,17 @@ one can use:
 <!--raw-typst
 which renders as: $integral_1^2 x dif x$
 -->
+
+#### `task-list-marker`
+
+A callback which can be used to render Markdown task lists,
+or `none` if task lists are not supported.
+
+- Accepted values:
+	Functions from booleans to content, or `none`.
+- Default value: `none`.
+
+TODO TODO
 
 #### `h1-level`
 
@@ -302,6 +314,7 @@ render-with-metadata(
   markdown,
   smart-punctuation: true,
   math: none,
+  task-list-marker: none,
   h1-level: 1,
   set-document-title: true,
   raw-typst: true,
