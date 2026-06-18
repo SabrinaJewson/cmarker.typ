@@ -76,6 +76,24 @@ pub fn run<H: HtmlTags>(markdown: &str, options: Options<'_, H>) -> Result<Vec<u
     }
 
     let mut result = Vec::new();
+
+    // Keeping track of open HTML tags. For every nested Markdown container (outer `Vec`), we store
+    // a stack of open HTML tags (inner `Vec`). For example:
+    //
+    //     <main><div>
+    //
+    //     > *<span>some text*
+    //
+    // When processing `some text`, we would have a stack of
+    //
+    //     [["main", "div"], [], ["span"]]
+    //      ↑                ↑   ↑
+    //      outer level      │   open HTML tags in emphasis
+    //                       open HTML tags in blockquote
+    //
+    // This ensures that `</div>` or `</main>` inside the blockquote will necessarily do nothing,
+    // as those tags can’t possibly be closed yet. Additionally, the `<span>` will be automatically
+    // closed at the end of the emphasis, again by necessity.
     let mut open_tags: Vec<Vec<CaseInsensitive<&[u8]>>> = vec![Vec::new()];
     let start_scope = |open_tags: &mut Vec<Vec<CaseInsensitive<&[u8]>>>, result: &mut Vec<u8>| {
         open_tags.push(Vec::new());
@@ -90,12 +108,15 @@ pub fn run<H: HtmlTags>(markdown: &str, options: Options<'_, H>) -> Result<Vec<u
         close_tags(open_tags, result);
         result.extend_from_slice(b"]");
     };
+
     let mut current_header_label = None::<Label>;
     let mut label_tracker = LabelTracker {
         counts: HashMap::new(),
         prefix: options.label_prefix,
     };
+
     let mut footnotes = Footnotes::default();
+
     let mut farm = Farm::default();
 
     let mut parser = Unpeekable::new(pulldown_cmark::Parser::new_with_broken_link_callback(
@@ -467,18 +488,30 @@ impl<'input> pulldown_cmark::BrokenLinkCallback<'input> for BrokenLinkCallback {
     }
 }
 
+/// Footnotes in Markdown can be defined out-of-line (anywhere in the document, even inside other
+/// footnote definitions), whereas the resulting Typst code should have the footnotes inline, on
+/// first use.
+///
+/// To bridge the gap, we build the main document and each footnote definition entirely separately,
+/// then splice in all the completed `#footnote` definitions at the end. This type manages the state
+/// needed to do this.
+///
+/// The place we are currently putting content – which is either the main document or a footnote
+/// definition – is called the “active context”. When a footnote reference is encountered, we mark
+/// down its position as an “insertion point” in the active context and move on. Later on, each
+/// insertion point either becomes a `#footnote` call (if it is the first insertion point of that
+/// footnote) or a reference to a previously defined footnote.
 #[derive(Default)]
 struct Footnotes<'a> {
-    /// Insertion points of the currently active context, which is either the main content or an
-    /// in-progress footnote definition.
+    /// Insertion points of the currently active context.
     ///
-    /// We go back over these and insert `#footnote`s or references once we have all the
-    /// definitions.
+    /// We store the index and the referenced footnote.
     insertion_points: Vec<(usize, CowStr<'a>)>,
     /// All completed footnote definitions and their insertion points.
     definitions: HashMap<CowStr<'a>, FootnoteDefinition<'a>>,
     /// Stack of footnotes being defined (since footnote definitions may be nested). For each one,
-    /// contains the in-progress footnote definition that should be returned to.
+    /// contains the footnote name and the in-progress footnote definition that should be returned
+    /// to.
     open_definitions: Vec<(CowStr<'a>, FootnoteDefinition<'a>)>,
 }
 
@@ -1131,6 +1164,8 @@ fn escape_text(text: &[u8], result: &mut Vec<u8>) {
     }
 }
 
+/// Keeps track of all automatically-assigned labels in the document, making sure that we don’t
+/// produce collisions.
 struct LabelTracker<'a> {
     counts: HashMap<Label, u64>,
     prefix: &'a str,
