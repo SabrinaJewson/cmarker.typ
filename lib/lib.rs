@@ -60,7 +60,6 @@ bitflags! {
         const RAW_TYPST = 0b0000_0010;
         const MATH = 0b0000_0100;
         const SET_DOCUMENT_TITLE = 0b0000_1000;
-        /// Assumes the existence of a `task-list-marker` item in scope.
         const TASK_LISTS = 0b0001_0000;
     }
 }
@@ -603,26 +602,11 @@ struct OpenList {
     /// avoid allocating in the common case.
     items: String,
     trailing_zeros: u32,
-    /// The index of the function call (`enum` or `list`).
-    ///
-    /// We won’t know ahead-of-time whether bullet-point lists are represented as `list`s or as
-    /// `enum`s (the latter is used when task list markers are present, as there is otherwise no
-    /// non-hacky way to have the bullet point vary from item to item).
-    ///
-    /// Therefore, we will sometimes write `list` initially and later override with `enum`.
-    ///
-    /// This isn’t an ideal solution for several reasons:
-    /// - Set and show rules for `enum`s will apply to these unordered task-lists
-    /// - Set and show rules for `list`s will not apply
-    /// - HTML output will incorrectly produce `<ol>` instead of `<ul>`
-    fn_call: usize,
-    /// The starting index of the list; `1` for unordered lists.
-    start: u64,
+    is_enum: bool,
 }
 
 impl OpenList {
     fn new(first: Option<u64>, result: &mut Vec<u8>) -> Self {
-        let fn_call = result.len() + 1;
         if let Some(first) = first {
             result.extend_from_slice(b"#enum(start:");
             result.extend_from_slice(itoa::Buffer::new().format(first).as_bytes());
@@ -633,8 +617,7 @@ impl OpenList {
         Self {
             items: String::new(),
             trailing_zeros: 0,
-            fn_call,
-            start: first.unwrap_or(1),
+            is_enum: first.is_some(),
         }
     }
     fn pad(&mut self) {
@@ -658,42 +641,14 @@ impl OpenList {
     fn end(mut self, result: &mut Vec<u8>) {
         if !self.items.is_empty() {
             self.pad();
-            let mut start = itoa::Buffer::new();
-            let start = start.format(self.start).as_bytes();
-            let is_numbered = result[self.fn_call] == b'e';
-
-            result.extend_from_slice(b"numbering:(..n,l)=>context{let v=(");
-            result.extend_from_slice(self.items.as_bytes());
-            result.extend_from_slice(b").at(");
-            if is_numbered {
-                result.extend_from_slice(b"if enum.reversed{");
-                result.extend_from_slice(start);
-                result.extend_from_slice(b" - l}else{l - ");
-                result.extend_from_slice(start);
-                result.extend_from_slice(b"}");
+            if self.is_enum {
+                result.extend_from_slice(b"numbering:enum-helper((");
+                result.extend_from_slice(self.items.as_bytes());
+                result.extend_from_slice(b")),full:true");
             } else {
-                result.extend_from_slice(b"l - ");
-                result.extend_from_slice(start);
-            }
-            result.extend_from_slice(b");if v>0{task-list-marker(v>1)}else{");
-            if is_numbered {
-                result.extend_from_slice(b"numbering(enum.numbering,..n,l)}}");
-            } else {
-                result[self.fn_call..][..4].copy_from_slice(b"enum");
-                let s = concat!(
-                    "if type(list.marker)==content{",
-                    "list.marker",
-                    "}else if type(list.marker)==array{",
-                    "list.marker.at(calc.rem(n.pos().len(),list.marker.len()))",
-                    "}else{",
-                    "(list.marker)(n.pos().len())",
-                    "}",
-                    "}},",
-                    "full:true,",
-                    "reversed:false,",
-                    "start:1,",
-                );
-                result.extend_from_slice(s.as_bytes());
+                result.extend_from_slice(b"marker:list-helper((");
+                result.extend_from_slice(self.items.as_bytes());
+                result.extend_from_slice(b"))");
             }
         }
         result.extend_from_slice(b")\n");

@@ -1,40 +1,32 @@
 <!-- SVG -->
 
+1. [ ] not checked
+1. 2.
+1. [x] is checked
+	1. 1.
+	1. [x] is checked
+
 <!--raw-typst #set enum(full: true, numbering: "a.") -->
 
 5. [ ] not checked
-1. item f
+1. f.
 1. [x] checked
-	1. a list
-	1. that
-	1. is nested
+	1. g.a.
+	1. g.b.
+	1. g.c.
 	1. [x] checked
 + [ ] not checked
 +
 + [x] checked
 
-normal nesting:
-
-- a
-	- b
-		- c
-			- d
-			- e
-		- f
-	- g
-- h
-
-task list nesting
-(this renders slightly incorrectly but there is little to be done):
-
-- a
-	- b
-		- c
-			- d
-			- [ ] e
-		- [ ] f
-	- [ ] g
-- h
+- •
+	- ▸
+		- \-
+			- •
+			- [ ] not checked
+		- \-
+	- [ ] not checked
+- •
 
 reversed:
 <!--raw-typst #set enum(reversed: true) -->
@@ -43,14 +35,15 @@ reversed:
 1. [x] checked
 1. one
 1. zero
-1. [ ] does not display a checkbox (unavoidable limitation)
+1. [ ] not checked
 
 `list.marker` is content:
 <!--raw-typst #set list(marker: [🙂]) -->
 
-- foo
-- bar
-	- baz
+- 🙂
+- 🙂
+	- [x] checked
+	- 🙂
 - [ ] not checked
 
 `list.marker` is a function:

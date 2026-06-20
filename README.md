@@ -126,12 +126,26 @@ which renders as: $integral_1^2 x dif x$
 
 A callback which can be used to render Markdown task lists,
 or `none` if task lists are not supported.
+The callback will be called with `true` if the checkbox is to be checked (`- [x]`),
+and `false` if it is unchecked (`- [ ]`).
 
 - Accepted values:
 	Functions from booleans to content, or `none`.
 - Default value: `none`.
 
-TODO TODO
+You may want to use [`cheq`](https://typst.app/universe/package/cheq) to provide the checkboxes:
+
+````typst
+#import "@preview/cheq:0.3.1"
+
+#cmarker.render(
+  ```md
+  - [ ] Not checked
+  - [x] Checked
+  ```,
+  task-list-marker: checked => if checked { cheq.checked-sym() } else { cheq.unchecked-sym() },
+)
+````
 
 #### `h1-level`
 
@@ -673,6 +687,16 @@ Term/description lists:
 <svg version="1.1" width="100" height="100" xmlns="http://www.w3.org/2000/svg">
 	<circle cx="50" cy="50" r="50" fill="blue" />
 </svg>
+```
+
+### Task lists
+
+If you set the [`task-list-marker`](#task-list-marker) parameter,
+`cmarker.typ`s supports task lists:
+
+```md
+- [ ] Not checked
+- [x] Checked
 ```
 
 ## Interleaving Markdown and Typst

@@ -279,7 +279,51 @@
   if task-list-marker != none {
     assert(type(task-list-marker) == function, message: "task-list-marker must be a function")
     flags += 0b00010000
-    scope += (task-list-marker: task-list-marker)
+
+    // We use manual counters even for `enum`s, even though they could use numberings. This is
+    // because in certain edge cases, numberings are not unique: a reversed list may have several
+    // items numbered at zero.
+    let list-counter = counter("cmarker-list")
+    let enum-counter = counter("cmarker-enum")
+
+    scope += (
+      list-helper: data => depth => {
+        list-counter.step(level: depth + 1)
+        context {
+          let i = list-counter.get().last()
+          let v = data.at(i - 1)
+          if v > 0 {
+            task-list-marker(v == 2)
+          } else if type(list.marker) == content {
+            list.marker
+          } else if type(list.marker) == array {
+            list.marker.at(calc.rem(depth, list.marker.len()))
+          } else {
+            (list.marker)(depth)
+          }
+          if i == data.len() {
+            list-counter.update((..c, _) => c.pos())
+          }
+        }
+      },
+      enum-helper: data => (..numbers) => {
+        enum-counter.step(level: numbers.pos().len())
+        context {
+          let i = enum-counter.get().last()
+          let v = data.at(i - 1)
+          if v > 0 {
+            task-list-marker(v == 2)
+          } else if enum.full {
+            numbering(enum.numbering, ..numbers)
+          } else {
+            numbering(enum.numbering, numbers.pos().last())
+          }
+          if i == data.len() {
+            enum-counter.update((..c, _) => c.pos())
+          }
+        }
+      },
+    )
   }
 
   let heading-labels = {
