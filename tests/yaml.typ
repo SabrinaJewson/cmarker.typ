@@ -23,9 +23,9 @@
     )
   }
 
-  html.elem("hr")
+  divider()
   meta-raw
-  html.elem("hr")
+  divider()
 
   body
 }

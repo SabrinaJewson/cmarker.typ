@@ -55,13 +55,16 @@
   }
   assert(type(markdown) == str, message: "Markdown must be a string")
 
-  scope = (rule: line.with(length: 100%), ..scope)
-
+  // Backward compatibility
   if blockquote != none {
     assert(type(blockquote) == function, message: "blockquote must be a function")
     scope += (
       quote: (block: false, ..rest) => if block { blockquote(..rest) } else { quote(..rest) },
     )
+  }
+  // Backward compatibility
+  if "rule" in scope {
+    scope += (divider: scope.rule)
   }
 
   let labelify(content, attrs) = {
@@ -177,7 +180,7 @@
       labelify(figure(caption: caption, rest), attrs)
     },
 
-    hr: ("void", (attrs) => (scope.rule)()),
+    hr: ("void", (attrs) => (scope.at("divider", default: divider))()),
     a: (attrs, body) => scope.at("link", default: link)(
       if attrs.href.starts-with("#") {
         label(label-use-prefix + attrs.href.slice(1))

@@ -457,7 +457,7 @@ pub fn run<H: HtmlTags>(markdown: &str, options: Options<'_, H>) -> Result<Vec<u
             E::SoftBreak => result.push(b' '),
             E::HardBreak => result.extend_from_slice(b"\\ "),
 
-            E::Rule => result.extend_from_slice(b"#rule()\n"),
+            E::Rule => result.extend_from_slice(b"#divider()\n"),
 
             E::FootnoteReference(label) => footnotes.reference(label, result.len()),
 
@@ -1485,8 +1485,8 @@ mod tests {
 
     #[test]
     fn horiz() {
-        assert_eq!(render("---\n"), "#rule()");
-        assert_eq!(render("---\n_"), "#rule()\n\\_");
+        assert_eq!(render("---\n"), "#divider()");
+        assert_eq!(render("---\n_"), "#divider()\n\\_");
     }
 
     #[test]
