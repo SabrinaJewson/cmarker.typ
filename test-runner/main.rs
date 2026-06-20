@@ -119,6 +119,7 @@ fn run_test(path: &Path, bless: bool) -> anyhow::Result<Result<(), String>> {
                 .and_then(|(_, rest)| rest.split_once("SOURCEEND"))
             {
                 stdout = rest;
+                assert!(hex.len().is_multiple_of(2));
                 let bytes = hex
                     .as_bytes()
                     .chunks_exact(2)
