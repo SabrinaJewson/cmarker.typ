@@ -16,7 +16,7 @@
   let args = (
     raw-typst: true,
     math: (text, block: true) => raw(block: block, text, lang: "math"),
-    task-list-marker: b => if b { [✅] } else { [❎] },
+    task-list-marker: b => if b { [v] } else { [x] },
     scope: (
       image: (path, ..args) => image(path, ..args),
       rule: html.hr,
