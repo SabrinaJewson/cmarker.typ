@@ -13,7 +13,7 @@ and import it directly into Typst.
 <tr>
 <td>
 
-```typst
+```typ
 #import "@preview/cmarker:0.1.8"
 
 #cmarker.render(read("simple.md"))
@@ -114,7 +114,7 @@ the user must configure this.
 
 For example, to render math equation as a Typst math block,
 one can use:
-```typst
+```typ
 #import "@preview/mitex:0.2.6": mitex
 #cmarker.render(`$\int_1^2 x \mathrm{d} x$`, math: mitex)
 ```
@@ -135,7 +135,7 @@ and `false` if it is unchecked (`- [ ]`).
 
 You may want to use [`cheq`](https://typst.app/universe/package/cheq) to provide the checkboxes:
 
-````typst
+````typ
 #import "@preview/cheq:0.3.1"
 
 #cmarker.render(
@@ -247,8 +247,8 @@ The dictionary of HTML elements that cmarker will support.
 For example, the following code
 would allow you to write `<circle radius="25">` to render a 25pt circle:
 
-```typst
-#cmarker.render(read("input.md"), html: (
+```typ
+#cmarker.render(read("example.md"), html: (
   circle: ("void", attrs => circle(radius: int(attrs.radius) * 1pt))
 ))
 ```
@@ -345,9 +345,9 @@ render-with-metadata(
 The `render-with-metadata` functions works the same as `render` with two exceptions:
 1. This function returns `(meta, body)`. This allows the user to freely manipulate the metadata.
 	```typ
-	#let (meta, body) = render-with-metadata(input)
+	#let (meta, body) = cmarker.render-with-metadata(read("example.md"))
 	// `body` will be the same as:
-	#let body = render(input)
+	#let body = cmarker.render(read("example.md"))
 	```
 2. This function has an extra argument: `metadata-block`. The other arguments are the same as `render`.
 
@@ -489,9 +489,9 @@ for using links with Typst labels and citations.
 Due to the way Typst resolves paths,
 in order for this to work you will need to override the `image` function in the [`scope`](#scope):
 
-```typst
+```typ
 #cmarker.render(
-  read("yourfile.md"),
+  read("example.md"),
   scope: (image: (source, ..args) => image(source, ..args))
 )
 ```
@@ -558,7 +558,7 @@ For example:
 
 You can alternatively transform all alt text into captions automatically:
 
-```typst
+```typ
 #cmarker.render(
   read("example.md"),
   scope: (
@@ -791,7 +791,7 @@ Then, open `your-file.html` in a web browser and copy the code block.
 Alternatively, you can attach it to the PDF as follows:
 
 ```typ
-#let typst-code = cmarker.render(read("yourmarkdown.md"), show-source: true)
+#let typst-code = cmarker.render(read("example.md"), show-source: true)
 #pdf.attach("yourtypstcode.typ", bytes(typst-code.text))
 ```
 
@@ -807,12 +807,12 @@ on the result.
 
 [Show rules](https://typst.app/docs/reference/styling/#show-rules) are the best way:
 
-```typst
+```typ
 #show heading.where(level: 1): it => {
   pagebreak(weak: true)
   it
 }
-#cmarker.render(read("main.md"))
+#cmarker.render(read("example.md"))
 ```
 
 For example, in the below document a pagebreak will occur before the second heading:
@@ -834,7 +834,7 @@ more content
 This can be achieved via [show rules](https://typst.app/docs/reference/styling/#show-rules).
 For example, centring:
 
-```typst
+```typ
 #show table: t => align(center, t)
 #cmarker.render("
   | a | b |
@@ -845,7 +845,7 @@ For example, centring:
 
 And having them span the page width:
 
-```typst
+```typ
 #show table: t => {
   if t.columns.all(c => c == auto) {
     table(columns: (1fr,) * t.columns.len(), align: t.align, ..t.children)
