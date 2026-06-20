@@ -14,7 +14,6 @@
 
 #run-cmarker(
   read(sys.inputs.md),
-  raw-typst: true,
   math: (text, block: true) => raw(block: block, text, lang: "math"),
   task-list-marker: b => if b { [v] } else { [x] },
   scope: (image: (path, ..args) => image(path, ..args)),

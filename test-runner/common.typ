@@ -1,38 +1,6 @@
 #import "/lib.typ" as cmarker
 
-#let run-cmarker-with-metadata(
-  markdown,
-  smart-punctuation: true,
-  math: none,
-  task-list-marker: none,
-  h1-level: 1,
-  set-document-title: true,
-  raw-typst: true,
-  html: (:),
-  label-prefix: "",
-  heading-labels: "github",
-  prefix-label-uses: true,
-  scope: (:),
-  blockquote: none,
-  metadata-block: none
-) = {
-  let args = arguments(
-    markdown,
-    smart-punctuation: smart-punctuation,
-    math: math,
-    task-list-marker: task-list-marker,
-    h1-level: h1-level,
-    set-document-title: set-document-title,
-    raw-typst: raw-typst,
-    html: html,
-    label-prefix: label-prefix,
-    prefix-label-uses: prefix-label-uses,
-    heading-labels: heading-labels,
-    scope: scope,
-    blockquote: blockquote,
-    metadata-block: metadata-block
-  )
-
+#let run-cmarker-with-metadata(..args) = {
   if "show-source" in sys.inputs {
     let (meta, source) = cmarker.render-with-metadata(show-source: true, ..args)
     let source = {
@@ -51,37 +19,7 @@
   }
 }
 
-#let run-cmarker(
-  markdown,
-  smart-punctuation: true,
-  math: none,
-  task-list-marker: none,
-  h1-level: 1,
-  set-document-title: true,
-  raw-typst: true,
-  html: (:),
-  label-prefix: "",
-  heading-labels: "github",
-  prefix-label-uses: true,
-  scope: (:),
-  blockquote: none,
-) = {
-  let args = arguments(
-    markdown,
-    smart-punctuation: smart-punctuation,
-    math: math,
-    task-list-marker: task-list-marker,
-    h1-level: h1-level,
-    set-document-title: set-document-title,
-    raw-typst: raw-typst,
-    html: html,
-    label-prefix: label-prefix,
-    prefix-label-uses: prefix-label-uses,
-    heading-labels: heading-labels,
-    scope: scope,
-    blockquote: blockquote,
-  )
-
+#let run-cmarker(..args) = {
   if "show-source" in sys.inputs {
     let source = cmarker.render(show-source: true, ..args)
     "SOURCESTART"

@@ -14,7 +14,7 @@
   scope: (:),
   show-source: false,
   blockquote: none,
-  metadata-block: none
+  metadata-block: none,
 ) = {
   // A simple system for tagging content with invisible metadata.
   // Used to implement various HTML tags that need some amount of structure.
@@ -443,7 +443,7 @@
   heading-labels: "github",
   scope: (:),
   show-source: false,
-  blockquote: none
+  blockquote: none,
 ) = {
   let (meta, body) = render-with-metadata(
     markdown,
