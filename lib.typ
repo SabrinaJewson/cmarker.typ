@@ -310,7 +310,7 @@
         }
       },
       enum-helper: data => (..numbers) => {
-        enum-counter.step(level: numbers.pos().len())
+        enum-counter.step(level: numbers.len())
         context {
           let i = enum-counter.get().last()
           let v = data.at(i - 1)
