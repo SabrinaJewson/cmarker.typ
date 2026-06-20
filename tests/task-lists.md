@@ -38,12 +38,12 @@ reversed:
 1. [ ] not checked
 
 `list.marker` is content:
-<!--raw-typst #set list(marker: [🙂]) -->
+<!--raw-typst #set list(marker: [X]) -->
 
-- 🙂
-- 🙂
+- X
+- X
 	- [x] checked
-	- 🙂
+	- X
 - [ ] not checked
 
 `list.marker` is a function:
