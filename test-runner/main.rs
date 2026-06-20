@@ -85,6 +85,7 @@ fn run_test(path: &Path, bless: bool) -> anyhow::Result<Result<(), String>> {
         command.arg("-");
         command.arg("--features=html");
         command.arg("--root=.");
+        command.arg("--pretty");
         command
     };
     let output = typst_command()

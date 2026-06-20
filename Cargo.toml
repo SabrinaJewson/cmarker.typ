@@ -3,7 +3,7 @@ members = ["lib", "plugin", "test-runner", "fuzz"]
 resolver = "3"
 
 [workspace.dependencies]
-typst-syntax = "0.14.2"
+typst-syntax = "0.15.0"
 
 [profile.release.package.plugin]
 strip = true

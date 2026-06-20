@@ -1,19 +1,19 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
   </head>
   <body>
-    <p>Footnotes 1, 2, 1:<a id="before" href="#loc-1" role="doc-noteref"><sup>1</sup></a><a id="after" href="#loc-2" role="doc-noteref"><sup>2</sup></a><a href="#loc-1" role="doc-noteref"><sup>1</sup></a></p>
-    <p>Another footnote:<a href="#loc-1" role="doc-noteref"><sup>1</sup></a></p>
+    <p>Footnotes 1, 2, 1:<sup id="before" role="doc-noteref"><a href="#loc-1">1</a></sup><sup id="after" role="doc-noteref"><a href="#loc-2">2</a></sup><sup role="doc-noteref"><a href="#loc-1">1</a></sup></p>
+    <p>Another footnote:<sup role="doc-noteref"><a href="#loc-1">1</a></sup></p>
     <section role="doc-endnotes">
       <ol style="list-style-type: none">
         <li id="loc-1">
-          <p><a href="#before" role="doc-backlink"><sup>1</sup></a>xyz</p>
+          <p><sup role="doc-backlink"><a href="#before">1</a></sup>xyz</p>
         </li>
         <li id="loc-2">
-          <p><a href="#after" role="doc-backlink"><sup>2</sup></a>abc <strong>bold text in footnote</strong></p>
+          <p><sup role="doc-backlink"><a href="#after">2</a></sup>abc <strong>bold text in footnote</strong></p>
         </li>
       </ol>
     </section>

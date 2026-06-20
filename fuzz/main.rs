@@ -14,8 +14,9 @@ static HTML_TAGS: LazyLock<HtmlTagMap<'static>> = LazyLock::new(|| {
 });
 
 fuzz_target!(|markdown: &str| {
-    // Prevent stack overflows from nested blockquotes. We can’t reasonably support this anyway.
-    if 2000 < markdown.bytes().filter(|&b| b == b'>').count() {
+    // Prevent “maximum parsing depth exceeded” errors from nested blockquotes. We can’t reasonably
+    // support this anyway.
+    if 130 < markdown.bytes().filter(|&b| b == b'>').count() {
         return;
     }
 
@@ -29,7 +30,8 @@ fuzz_target!(|markdown: &str| {
     };
     let text = cmarker_typst::run(markdown, options).unwrap();
     let text = String::from_utf8(text).unwrap();
-    if let Some(error) = typst_syntax::parse(&text).errors().into_iter().next() {
+    let (errors, warnings) = typst_syntax::parse(&text).errors_and_warnings();
+    if let Some(error) = errors.into_iter().chain(warnings).next() {
         panic!("{}", error.message);
     }
 });

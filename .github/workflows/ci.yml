@@ -36,7 +36,7 @@ jobs:
           targets: wasm32v1-none
       - uses: typst-community/setup-typst@v4
         with:
-          typst-version: "0.14.2"
+          typst-version: "0.15.0"
       - run: cargo test --workspace
 
   fmt:

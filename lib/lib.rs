@@ -1849,7 +1849,8 @@ mod tests {
     #[track_caller]
     fn render_with(s: &str, options: Options<'_, impl HtmlTags>) -> String {
         let s = String::from_utf8(super::run(s, options).unwrap()).unwrap();
-        if let Some(e) = typst_syntax::parse(&s).errors().into_iter().next() {
+        let (errors, warnings) = typst_syntax::parse(&s).errors_and_warnings();
+        if let Some(e) = errors.into_iter().chain(warnings).next() {
             panic!("{}\nsource code: ```\n{s}\n```", e.message);
         }
         s
