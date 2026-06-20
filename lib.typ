@@ -274,7 +274,7 @@
   if math != none {
     assert(type(math) == function, message: "math must be a function")
     flags += 0b00000100
-    scope += (inlinemath: math.with(block: false), displaymath: math.with(block: true))
+    scope += (math: math)
   }
   if set-document-title {
     flags += 0b00001000

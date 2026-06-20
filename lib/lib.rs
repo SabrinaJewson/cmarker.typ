@@ -437,8 +437,7 @@ pub fn run<H: HtmlTags>(markdown: &str, options: Options<'_, H>) -> Result<Vec<u
             }
 
             E::InlineMath(s) => {
-                // We use #inlinemath(`…`) for inline math
-                result.extend_from_slice(b"#inlinemath(\"");
+                result.extend_from_slice(b"#math(block:false,\"");
                 escape_string(s.as_bytes(), &mut result);
                 result.extend_from_slice(b"\");");
 
@@ -448,8 +447,7 @@ pub fn run<H: HtmlTags>(markdown: &str, options: Options<'_, H>) -> Result<Vec<u
             }
 
             E::DisplayMath(s) => {
-                // We use #displaymath(`…`) for display math
-                result.extend_from_slice(b"#displaymath(\"");
+                result.extend_from_slice(b"#math(block:true,\"");
                 escape_string(s.as_bytes(), &mut result);
                 result.extend_from_slice(b"\");");
             }
@@ -1352,7 +1350,7 @@ mod tests {
         assert_eq!(render("# a<s>b</s>c"), "\n= abc\n#label(\"abc\");");
         assert_eq!(
             with_math("# a$b + 1$c"),
-            "\n= a#inlinemath(\"b + 1\");c\n#label(\"ab--1c\");"
+            "\n= a#math(block:false,\"b + 1\");c\n#label(\"ab--1c\");"
         );
         assert_eq!(
             render("# a\n# a"),
@@ -1547,16 +1545,16 @@ mod tests {
 
     #[test]
     fn math() {
-        assert_eq!(with_math("$x$"), "#inlinemath(\"x\");");
+        assert_eq!(with_math("$x$"), "#math(block:false,\"x\");");
         assert_eq!(
             with_math("$\\alpha + \\beta$"),
-            "#inlinemath(\"\\\\alpha + \\\\beta\");"
+            "#math(block:false,\"\\\\alpha + \\\\beta\");"
         );
-        assert_eq!(with_math("$$x$$"), "#displaymath(\"x\");");
-        assert_eq!(with_math("a$x$b"), "a#inlinemath(\"x\");b");
+        assert_eq!(with_math("$$x$$"), "#math(block:true,\"x\");");
+        assert_eq!(with_math("a$x$b"), "a#math(block:false,\"x\");b");
         assert_eq!(render("a$x$b"), "a\\$x\\$b");
         assert_eq!(render("a$$x$$b"), "a\\$\\$x\\$\\$b");
-        assert_eq!(with_math("$$\nx\n$$"), "#displaymath(\"\nx\n\");");
+        assert_eq!(with_math("$$\nx\n$$"), "#math(block:true,\"\nx\n\");");
     }
 
     #[test]
