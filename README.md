@@ -31,12 +31,12 @@ and import it directly into Typst.
 </table>
 <table>
 <tr><th><code>simple.pdf</code></th></tr>
-<tr><td><img src="./examples/simple.png"></td></tr>
+<tr><td><img src="./examples/simple.png" alt="`simple.md` rendered as a PDF"></td></tr>
 </table>
 
 This document is available
-in [Markdown](https://github.com/SabrinaJewson/cmarker.typ/tree/main#cmarker)
-and [rendered PDF](https://github.com/SabrinaJewson/cmarker.typ/blob/main/README.pdf)
+in [Markdown](https://github.com/SabrinaJewson/cmarker.typ/tree/release#cmarker)
+and [rendered PDF](https://github.com/SabrinaJewson/cmarker.typ/blob/release/README.pdf)
 formats.
 
 ## Contents
@@ -115,7 +115,7 @@ the user must configure this.
 For example, to render math equation as a Typst math block,
 one can use:
 ```typ
-#import "@preview/mitex:0.2.6": mitex
+#import "@preview/mitex:0.2.7": mitex
 #cmarker.render(`$\int_1^2 x \mathrm{d} x$`, math: mitex)
 ```
 <!--raw-typst
@@ -743,7 +743,7 @@ otherwise it will just be seen as a regular comment and removed):
 
 ### How do I include multiple Markdown files in one project?
 
-See [the multi-file example](https://github.com/SabrinaJewson/cmarker.typ/blob/main/examples/multi-file.typ).
+See [the multi-file example](https://github.com/SabrinaJewson/cmarker.typ/blob/release/examples/multi-file.typ).
 
 Note that this example uses a _single_ call to `render` with concatenated Markdown,
 i.e. `cmarker.render(read("file-a.md") + read("file-b.md"))`.
