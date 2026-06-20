@@ -1,0 +1,11 @@
+[package]
+name = "checks"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[lib]
+path = "lib.rs"
+
+[dependencies]
+anyhow = "1.0.102"
