@@ -41,6 +41,7 @@ reversed:
 <!--raw-typst #set list(marker: [X]) -->
 
 - X
+
 - X
 	- [x] checked
 	- X

@@ -241,14 +241,13 @@ pub fn run<H: HtmlTags>(markdown: &str, options: Options<'_, H>) -> Result<Vec<u
             E::Start(Tag::List(first)) => open_lists.push(OpenList::new(first, &mut result)),
             E::End(TagEnd::List(_)) => open_lists.pop().unwrap().end(&mut result),
             E::Start(Tag::Item) => {
-                open_lists.last_mut().unwrap().item(match parser.next() {
-                    (Some(E::TaskListMarker(checked)), _) => Some(checked),
-                    (event, unpeeker) => {
-                        unpeeker.unpeek(event);
-                        None
-                    }
-                });
+                open_lists.last_mut().unwrap().start_item();
                 start_scope(&mut open_tags, &mut result);
+            }
+            // Can appear either at the start of a list item, or at the start of the first paragraph
+            // in a list item.
+            E::TaskListMarker(checked) => {
+                open_lists.last_mut().unwrap().task_list_marker(checked);
             }
             E::End(TagEnd::Item) => {
                 end_scope(&mut open_tags, &mut result);
@@ -458,8 +457,6 @@ pub fn run<H: HtmlTags>(markdown: &str, options: Options<'_, H>) -> Result<Vec<u
             E::Rule => result.extend_from_slice(b"#divider()\n"),
 
             E::FootnoteReference(label) => footnotes.reference(label, result.len()),
-
-            E::TaskListMarker(_) => unreachable!(),
         }
     }
     // We don’t pass in `label_use_prefix` because it’s rare to want to reference a footnote
@@ -624,17 +621,16 @@ impl OpenList {
         }
         self.trailing_zeros = 0;
     }
-    fn item(&mut self, item: Option<bool>) {
-        match item {
-            Some(checked) => {
-                self.pad();
-                self.items.push_str(match checked {
-                    false => "1,",
-                    true => "2,",
-                });
-            }
-            None => self.trailing_zeros += 1,
-        }
+    fn start_item(&mut self) {
+        self.trailing_zeros += 1;
+    }
+    fn task_list_marker(&mut self, checked: bool) {
+        self.trailing_zeros -= 1;
+        self.pad();
+        self.items.push_str(match checked {
+            false => "1,",
+            true => "2,",
+        });
     }
     fn end(mut self, result: &mut Vec<u8>) {
         if !self.items.is_empty() {
@@ -1716,6 +1712,18 @@ mod tests {
     }
 
     #[test]
+    fn checklists() {
+        assert_eq!(
+            with_task_lists("\n- [ ] _\n- [x]\n-"),
+            "#list([\\_],[],[],marker:list-helper((1,2,0,)))"
+        );
+        assert_eq!(
+            with_task_lists("- x\n- [ ] _\n\n- [x]\n"),
+            "#list([x\n\n],[\\_\n\n],[],marker:list-helper((0,1,2,)))"
+        );
+    }
+
+    #[test]
     fn table() {
         let example_md = concat!(
             "| Column 1      | Column 2      |\n",
@@ -1796,6 +1804,12 @@ mod tests {
     fn with_raw_typst(s: &str) -> String {
         let mut options = default_options();
         options.flags = Flags::RAW_TYPST;
+        render_with(s, options)
+    }
+    #[track_caller]
+    fn with_task_lists(s: &str) -> String {
+        let mut options = default_options();
+        options.flags = Flags::TASK_LISTS;
         render_with(s, options)
     }
     #[track_caller]
