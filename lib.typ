@@ -304,10 +304,8 @@
           } else {
             (list.marker)(depth)
           }
-          if i == data.len() {
-            list-counter.update((..c, _) => c.pos())
-          }
         }
+        list-counter.update((..c, i) => if i < data.len() { (..c.pos(), i) } else { c.pos() })
       },
       enum-helper: data => (..numbers) => {
         enum-counter.step(level: numbers.len())
@@ -321,10 +319,8 @@
           } else {
             numbering(enum.numbering, numbers.pos().last())
           }
-          if i == data.len() {
-            enum-counter.update((..c, _) => c.pos())
-          }
         }
+        enum-counter.update((..c, i) => if i < data.len() { (..c.pos(), i) } else { c.pos() })
       },
     )
   }
