@@ -14,7 +14,7 @@ and import it directly into Typst.
 <td>
 
 ```typ
-#import "@preview/cmarker:0.1.9"
+#import "@preview/cmarker:0.1.10"
 
 #cmarker.render(read("simple.md"))
 ```
