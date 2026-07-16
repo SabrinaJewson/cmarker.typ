@@ -378,22 +378,19 @@
   // [2] and a line of three hyphens (---) or three dots (...) at the bottom.
   // [3] The initial line --- must not be followed by a blank line.
   //
-  // A TOML metadata block is a valid TOML object,
-  // [1] delimited by a line of three plus signs (+++) at the top
-  // [2] and a line of three plus sings (+++) at the bottom.
+  // A TOML metadata block is the same, but with +++ instead of --- (and ... disallowed).
   //
   // Reference: https://pandoc.org/demo/example33/8.10-metadata-blocks.html
   //            https://docs.rs/pulldown-cmark/latest/pulldown_cmark/struct.Options.html#associatedconstant.ENABLE_PLUSES_DELIMITED_METADATA_BLOCKS
-  let extract-frontmatter(s) = {
+  let extract-frontmatter(s, pluses: false) = {
     let original = s
-    let is_plus = metadata-block == "frontmatter-toml" or metadata-block == "frontmatter-pluses"
-    let starter = if is_plus {
-      "\\+\\+\\+"
+    let (start, end) = if pluses {
+      ("\\+\\+\\+", "\\+\\+\\+")
     } else {
-      "---"
+      ("---", "(---|\.\.\.)")
     }
 
-    let start-match = s.match(regex("^" + starter + "[ \t\r]*\n"))
+    let start-match = s.match(regex("^" + start + "[ \t\r]*\n"))
     if start-match == none {
       return ("", original)
     }
@@ -403,8 +400,7 @@
       return ("", original)
     }
 
-    let ender = if is_plus {starter} else {"(" + starter + "|\.\.\.)"}
-    let end-match = s.match(regex("\n"+ ender +"[ \t\r]*(\n|$)"))
+    let end-match = s.match(regex("\n"+ end +"[ \t\r]*(\n|$)"))
     if end-match == none {
       return ("", original)
     }
@@ -412,11 +408,24 @@
     return (s.slice(0, end-match.start), s.slice(end-match.end))
   }
 
-  let (markdown-frontmatter, markdown) = if metadata-block != none {
-     extract-frontmatter(markdown)
-  } else {
-    (none, markdown)
+  let (frontmatter, markdown) = {
+    if metadata-block == "frontmatter-raw" or metadata-block == "frontmatter-yaml" {
+      extract-frontmatter(markdown, pluses: false)
+    } else if metadata-block == "frontmatter-pluses" or metadata-block == "frontmatter-toml" {
+      extract-frontmatter(markdown, pluses: true)
+    } else if metadata-block == none {
+      (none, markdown)
+    } else {
+      let message = "invalid metadata-block value `" + metadata-block + "` (expected `frontmatter-raw`, `frontmatter-yaml`, `frontmatter-pluses` or `frontmatter-toml`)"
+      assert(false, message: message)
+    }
   }
+  if metadata-block == "frontmatter-yaml" {
+    frontmatter = yaml(bytes(frontmatter))
+  } else if metadata-block == "frontmatter-toml" {
+    frontmatter = toml(bytes(frontmatter))
+  }
+
   let rendered = str(_p.render(bytes(markdown), bytes(options-bytes)))
 
   let body = if show-source {
@@ -425,18 +434,7 @@
     eval(rendered, mode: "markup", scope: scope)
   }
 
-  let metadata-block-content = if metadata-block == "frontmatter-raw" or metadata-block == "frontmatter-pluses" {
-    markdown-frontmatter
-  } else if metadata-block == "frontmatter-yaml" {
-    yaml(bytes(markdown-frontmatter))
-  } else if metadata-block == "frontmatter-toml" {
-    toml(bytes(markdown-frontmatter))
-  } else if metadata-block != none {
-    let message = "invalid metadata-block value `" + metadata-block + "` (expected `frontmatter-raw`, `frontmatter-yaml`, `frontmatter-pluses` or `frontmatter-toml`)"
-    assert(false, message: message)
-  }
-
-  (metadata-block-content, body)
+  (frontmatter, body)
 }
 
 #let render(
