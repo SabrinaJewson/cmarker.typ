@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body>
+    <hr>
+    <p></p>
+    <hr>
+    <p>content with no metadata</p>
+    <hr>
+    <p>title = 'metadata-test'</p>
+    <hr>
+    <p>content with simple metadata</p>
+    <hr>
+    <p>title = 'metadata-test'</p>
+    <hr>
+    <hr>
+    <p>title = 'metadata-test'</p>
+    <hr>
+    <p>content with multiple closing delimiters (only the first is considered) +++ content with multiple closing delimiters (only the first is considered)</p>
+    <hr>
+    <p></p>
+    <hr>
+    <p>+++</p>
+    <p>title = ‘metadata-test’ +++ content that starts with “—\n\n” has no metadata-block</p>
+    <hr>
+    <p></p>
+    <hr>
+    <p>+++ title = ‘metadata-test’ content that with no closing delimiter has no metadata-block</p>
+  </body>
+</html>

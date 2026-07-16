@@ -378,11 +378,22 @@
   // [2] and a line of three hyphens (---) or three dots (...) at the bottom.
   // [3] The initial line --- must not be followed by a blank line.
   //
+  // A TOML metadata block is a valid TOML object,
+  // [1] delimited by a line of three plus signs (+++) at the top
+  // [2] and a line of three plus sings (+++) at the bottom.
+  //
   // Reference: https://pandoc.org/demo/example33/8.10-metadata-blocks.html
+  //            https://docs.rs/pulldown-cmark/latest/pulldown_cmark/struct.Options.html#associatedconstant.ENABLE_PLUSES_DELIMITED_METADATA_BLOCKS
   let extract-frontmatter(s) = {
     let original = s
+    let is_plus = metadata-block == "frontmatter-toml" or metadata-block == "frontmatter-pluses"
+    let starter = if is_plus {
+      "\\+\\+\\+"
+    } else {
+      "---"
+    }
 
-    let start-match = s.match(regex("^---[ \t\r]*\n"))
+    let start-match = s.match(regex("^" + starter + "[ \t\r]*\n"))
     if start-match == none {
       return ("", original)
     }
@@ -392,7 +403,8 @@
       return ("", original)
     }
 
-    let end-match = s.match(regex("\n(---|\.\.\.)[ \t\r]*(\n|$)"))
+    let ender = if is_plus {starter} else {"(" + starter + "|\.\.\.)"}
+    let end-match = s.match(regex("\n"+ ender +"[ \t\r]*(\n|$)"))
     if end-match == none {
       return ("", original)
     }
@@ -413,12 +425,14 @@
     eval(rendered, mode: "markup", scope: scope)
   }
 
-  let metadata-block-content = if metadata-block == "frontmatter-raw" {
+  let metadata-block-content = if metadata-block == "frontmatter-raw" or metadata-block == "frontmatter-pluses" {
     markdown-frontmatter
   } else if metadata-block == "frontmatter-yaml" {
     yaml(bytes(markdown-frontmatter))
+  } else if metadata-block == "frontmatter-toml" {
+    toml(bytes(markdown-frontmatter))
   } else if metadata-block != none {
-    let message = "invalid metadata-block value `" + metadata-block + "` (expected `frontmatter-raw` or `frontmatter-yaml`)"
+    let message = "invalid metadata-block value `" + metadata-block + "` (expected `frontmatter-raw`, `frontmatter-yaml`, `frontmatter-pluses` or `frontmatter-toml`)"
     assert(false, message: message)
   }
 

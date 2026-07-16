@@ -360,9 +360,16 @@ If `none`, the metadata block will not be parsed.
 The behaviour is the same as using `render`.
 - Accepted values:
 	- `"frontmatter-raw"`:
-		Parse the metadata block and return it as a string.
+		Parse the metadata block and return it as a string. The block is treated as a YAML
+		block, which starts with `---` and ends with `---` or `...`.
 	- `"frontmatter-yaml"`:
 		Parsed the metadata block as YAML and return it as a dictionary.
+	- `"frontmatter-pluses"`:
+		Same as `"frontmatter-raw"`, except the block is treated as a TOML block, which
+		starts with `+++` and ends with `+++`...`.
+	- `"frontmatter-toml"`:
+		Same as `"frontmatter-yaml"`, except the data is TOML instead of YAML and
+		`"frontmatter-pluses"` delimiters apply.
 	- `none`.
 - Default value: `none`.
 
