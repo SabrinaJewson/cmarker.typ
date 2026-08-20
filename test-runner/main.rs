@@ -122,10 +122,12 @@ fn run_test(path: &Path, bless: bool) -> anyhow::Result<Result<(), String>> {
                 assert!(hex.len().is_multiple_of(2));
                 let bytes = hex
                     .as_bytes()
-                    .chunks_exact(2)
-                    .map(|chunk| {
-                        ((char::from(chunk[0]).to_digit(16).unwrap() as u8) << 4)
-                            | char::from(chunk[1]).to_digit(16).unwrap() as u8
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|&[a, b]| {
+                        ((char::from(a).to_digit(16).unwrap() as u8) << 4)
+                            | char::from(b).to_digit(16).unwrap() as u8
                     })
                     .collect::<Vec<u8>>();
 
