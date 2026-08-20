@@ -265,8 +265,8 @@ pub fn run<H: HtmlTags>(markdown: &str, options: Options<'_, H>) -> Result<Vec<u
                     });
                 }
                 result.extend_from_slice(b"),columns:");
-                let mut columns = itoa::Buffer::new();
-                result.extend_from_slice(columns.format(alignments.len()).as_bytes());
+                let mut columns = NumBuffer::new();
+                result.extend_from_slice(alignments.len().format_into(&mut columns).as_bytes());
                 result.extend_from_slice(b",");
             }
             E::End(TagEnd::Table) => result.extend_from_slice(b");"),
@@ -604,7 +604,7 @@ impl OpenList {
     fn new(first: Option<u64>, result: &mut Vec<u8>) -> Self {
         if let Some(first) = first {
             result.extend_from_slice(b"#enum(start:");
-            result.extend_from_slice(itoa::Buffer::new().format(first).as_bytes());
+            result.extend_from_slice(first.format_into(&mut NumBuffer::new()).as_bytes());
             result.extend_from_slice(b",");
         } else {
             result.extend_from_slice(b"#list(");
@@ -1257,7 +1257,7 @@ impl LabelTracker<'_> {
                 loop {
                     n += 1;
                     label.0.push('-');
-                    label.0.push_str(itoa::Buffer::new().format(n));
+                    label.0.push_str(n.format_into(&mut NumBuffer::new()));
                     let collides = self.counts.contains_key(&label);
                     label.0.truncate(original_len);
                     if !collides {
@@ -1266,7 +1266,7 @@ impl LabelTracker<'_> {
                 }
                 *self.counts.get_mut(&label).unwrap() = n;
                 result.push(b'-');
-                result.extend_from_slice(itoa::Buffer::new().format(n).as_bytes());
+                result.extend_from_slice(n.format_into(&mut NumBuffer::new()).as_bytes());
             }
         }
         result.extend_from_slice(b"\");");
@@ -1916,6 +1916,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 use bitflags::bitflags;
 use core::borrow::Borrow;
+use core::fmt::NumBuffer;
 use core::hash::BuildHasher;
 use core::hash::Hash;
 use core::hash::Hasher;

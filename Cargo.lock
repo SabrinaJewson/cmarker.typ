@@ -70,7 +70,6 @@ dependencies = [
  "foldhash",
  "hashbrown",
  "icu_properties",
- "itoa",
  "memchr",
  "phf",
  "phf_codegen",
