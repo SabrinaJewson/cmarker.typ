@@ -119,6 +119,7 @@
       untag-children(body, ("<dt>", "<dd>"))
         .map(((_, _, c)) => c)
         .chunks(2, exact: true)
+        .map(((t, d)) => terms.item(t, d))
     )),
 
     tr: (attrs, body) => tag-content(body, "<tr>"),
